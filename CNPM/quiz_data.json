@@ -1,0 +1,449 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin",
+      "role": "Admin",
+      "full_name": "",
+      "dob": "",
+      "student_id": ""
+    },
+    {
+      "username": "teacher",
+      "password": "teacher",
+      "role": "Teacher",
+      "full_name": "Teacher One",
+      "dob": "1990-01-01",
+      "student_id": ""
+    },
+    {
+      "username": "student",
+      "password": "student",
+      "role": "Student",
+      "full_name": "Student One",
+      "dob": "2005-01-01",
+      "student_id": "SV001"
+    },
+    {
+      "username": "t1",
+      "password": "t1",
+      "role": "Teacher",
+      "full_name": "",
+      "dob": "",
+      "student_id": ""
+    },
+    {
+      "username": "t2",
+      "password": "t2",
+      "role": "Student",
+      "full_name": "ho van tinh",
+      "dob": "01-08-2006",
+      "student_id": "060206005403"
+    }
+  ],
+  "templates": [
+    {
+      "template_id": "TP1766938532215",
+      "title": "exam math",
+      "created_by": "t1",
+      "questions": [
+        {
+          "text": "1+1",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "=2"
+          ],
+          "correct_indices": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "template_id": "TP1766942716762",
+      "title": "math",
+      "created_by": "t1",
+      "questions": [
+        {
+          "text": "1312",
+          "options": [
+            "12313",
+            "1231",
+            "1231",
+            "131"
+          ],
+          "correct_indices": [
+            0,
+            3
+          ]
+        },
+        {
+          "text": "2",
+          "options": [
+            "14",
+            "41",
+            "5",
+            "4"
+          ],
+          "correct_indices": [
+            3
+          ]
+        },
+        {
+          "text": "423234",
+          "options": [
+            "12",
+            "78",
+            "06",
+            "45"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "325",
+          "options": [
+            "242",
+            "567",
+            "3213",
+            "214"
+          ],
+          "correct_indices": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "exams": [
+    {
+      "exam_id": "EX1766938539681",
+      "template_id": "TP1766938532215",
+      "title": "exam math",
+      "created_by": "t1",
+      "access_code": "2PHOBTH2",
+      "password": "1",
+      "duration_seconds": 1740,
+      "allow_review": false,
+      "attempt_limit": 1,
+      "start_ts": 1766883600,
+      "end_ts": 1766937600,
+      "questions": [
+        {
+          "text": "1+1",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "=2"
+          ],
+          "correct_indices": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "exam_id": "EX1766940740233",
+      "template_id": "TP1766938532215",
+      "title": "exam math",
+      "created_by": "t1",
+      "access_code": "45RIV9BG",
+      "password": "123",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 1,
+      "start_ts": 1766883600,
+      "end_ts": 1767024000,
+      "questions": [
+        {
+          "text": "1+1",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "=2"
+          ],
+          "correct_indices": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "exam_id": "EX1766940836426",
+      "template_id": "TP1766938532215",
+      "title": "exam math",
+      "created_by": "t1",
+      "access_code": "LDRN9F3R",
+      "password": "123",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 1,
+      "start_ts": 1766883600,
+      "end_ts": 1767024000,
+      "questions": [
+        {
+          "text": "1+1",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "=2"
+          ],
+          "correct_indices": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "exam_id": "EX1766942734648",
+      "template_id": "TP1766942716762",
+      "title": "math",
+      "created_by": "t1",
+      "access_code": "9M11ZVS5",
+      "password": "",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 5,
+      "start_ts": 1766970000,
+      "end_ts": 1767024000,
+      "questions": [
+        {
+          "text": "1312",
+          "options": [
+            "12313",
+            "1231",
+            "1231",
+            "131"
+          ],
+          "correct_indices": [
+            0,
+            1
+          ]
+        },
+        {
+          "text": "2",
+          "options": [
+            "14",
+            "41",
+            "5",
+            "4"
+          ],
+          "correct_indices": [
+            2
+          ]
+        },
+        {
+          "text": "423234",
+          "options": [
+            "12",
+            "78",
+            "06",
+            "45"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "325",
+          "options": [
+            "242",
+            "567",
+            "3213",
+            "214"
+          ],
+          "correct_indices": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "exam_id": "EX1766942774243",
+      "template_id": "TP1766942716762",
+      "title": "math",
+      "created_by": "t1",
+      "access_code": "F290DIX2",
+      "password": "",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 5,
+      "start_ts": 1766883600,
+      "end_ts": 1767024000,
+      "questions": [
+        {
+          "text": "1312",
+          "options": [
+            "12313",
+            "1231",
+            "1231",
+            "131"
+          ],
+          "correct_indices": [
+            0,
+            1
+          ]
+        },
+        {
+          "text": "2",
+          "options": [
+            "14",
+            "41",
+            "5",
+            "4"
+          ],
+          "correct_indices": [
+            2
+          ]
+        },
+        {
+          "text": "423234",
+          "options": [
+            "12",
+            "78",
+            "06",
+            "45"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "325",
+          "options": [
+            "242",
+            "567",
+            "3213",
+            "214"
+          ],
+          "correct_indices": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "exam_id": "EX1766944923908",
+      "template_id": "TP1766942716762",
+      "title": "math",
+      "created_by": "t1",
+      "access_code": "MW71Z217",
+      "password": "",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 1,
+      "start_ts": 1766941200,
+      "end_ts": 1767024000,
+      "questions": [
+        {
+          "text": "1312",
+          "options": [
+            "12313",
+            "1231",
+            "1231",
+            "131"
+          ],
+          "correct_indices": [
+            0,
+            1
+          ]
+        },
+        {
+          "text": "2",
+          "options": [
+            "14",
+            "41",
+            "5",
+            "4"
+          ],
+          "correct_indices": [
+            2
+          ]
+        },
+        {
+          "text": "423234",
+          "options": [
+            "12",
+            "78",
+            "06",
+            "45"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "325",
+          "options": [
+            "242",
+            "567",
+            "3213",
+            "214"
+          ],
+          "correct_indices": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "attempt_id": "AT1766940895532337",
+      "exam_id": "EX1766940836426",
+      "code": "LDRN9F3R",
+      "title": "exam math",
+      "username": "t2",
+      "full_name": "ho van tinh",
+      "student_id": "060206005403",
+      "score": 1.0,
+      "total": 1,
+      "started_at": 1766940886.4283724,
+      "submitted_at": 1766940895.5323796,
+      "time_taken_seconds": 9,
+      "answers": [
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "attempt_id": "AT1766942832965264",
+      "exam_id": "EX1766942774243",
+      "code": "F290DIX2",
+      "title": "math",
+      "username": "t2",
+      "full_name": "ho van tinh",
+      "student_id": "060206005403",
+      "score": 1.5,
+      "total": 4,
+      "started_at": 1766942789.4602501,
+      "submitted_at": 1766942832.9651551,
+      "time_taken_seconds": 43,
+      "answers": [
+        [
+          0
+        ],
+        [
+          2
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    }
+  ]
+}
