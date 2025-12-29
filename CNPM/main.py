@@ -14,7 +14,7 @@ from ui import (
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Quiz Examination System (Modular)")
+        self.title("Quiz Examination System")
         self.geometry("1180x760")
         self.minsize(1180, 760)
 
@@ -71,4 +71,5 @@ class App(tk.Tk):
 
 if __name__ == "__main__":
     app = App()
+
     app.mainloop()
