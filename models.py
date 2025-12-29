@@ -71,10 +71,6 @@ class Attempt:
 # Scoring Logic
 # -----------------------------
 def score_question_partial(user_sel: Set[int], correct: Set[int], points: float) -> Tuple[float, Set[int], Set[int]]:
-    """
-    Partial scoring:
-    earned_ratio = max(0, (c - w) / k)
-    """
     if not correct:
         return (0.0, set(), set())
     c = len(user_sel & correct)
@@ -95,7 +91,19 @@ class DataStore:
         self.path = path
         self.data: Dict[str, Any] = {"users": [], "templates": [], "exams": [], "attempts": []}
         self.load()
-
+    def delete_user(self, username: str) -> bool:
+        """Xóa user khỏi danh sách. Trả về True nếu xóa thành công."""
+        # Không cho phép xóa tài khoản admin gốc để tránh lỗi hệ thống
+        if username == "admin":
+            return False
+            
+        before = len(self.data["users"])
+        self.data["users"] = [u for u in self.data["users"] if u.get("username") != username]
+        
+        if len(self.data["users"]) < before:
+            self.save()
+            return True
+        return False
     def load(self):
         if not os.path.exists(self.path):
             self._seed_default()
@@ -239,7 +247,6 @@ class DataStore:
         self.save()
 
     def update_template(self, t: Template) -> bool:
-        """Update content of an existing template."""
         for i, existing in enumerate(self.data["templates"]):
             if existing.get("template_id") == t.template_id:
                 self.data["templates"][i] = self._template_to_dict(t)

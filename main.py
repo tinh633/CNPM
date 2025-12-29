@@ -1,44 +1,46 @@
 # main.py
-import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
 from typing import Optional, Dict
 
 from models import DataStore, User
-# Import toàn bộ các Frame từ ui
+# Import all Frames from ui
 from ui import (
     LoginFrame, AdminFrame, TeacherFrame, StudentFrame,
     ExamTakeFrame, ReviewFrame, TeacherAttemptFrame,
     TemplatePreviewFrame, ExamPreviewFrame
 )
 
-class App(tk.Tk):
+class App(tb.Window):
     def __init__(self):
-        super().__init__()
-        self.title("Quiz Examination System (Modular)")
-        self.geometry("1180x760")
+        # The 'litera' theme provides a clean, modern, white/blue look.
+        # Other options: 'cosmo', 'flatly', 'darkly', 'superhero'
+        super().__init__(themename="litera")
+        
+        self.title("Quiz Examination System Pro")
+        self.geometry("1280x800")
         self.minsize(1180, 760)
 
         self.store = DataStore()
         self.current_user: Optional[User] = None
         self.current_frame_name: str = "LoginFrame"
 
-        self.container = ttk.Frame(self, padding=12)
+        # Use a container frame for pages
+        self.container = tb.Frame(self, padding=20)
         self.container.pack(fill="both", expand=True)
         self.container.rowconfigure(0, weight=1)
         self.container.columnconfigure(0, weight=1)
 
-        self.frames: Dict[str, ttk.Frame] = {}
+        self.frames: Dict[str, tb.Frame] = {}
         self._init_frames()
         self.show_frame("LoginFrame")
 
     def _init_frames(self):
-        # Đăng ký tất cả các Frame
         for F in (
             LoginFrame, AdminFrame, TeacherFrame, StudentFrame,
             ExamTakeFrame, ReviewFrame, TeacherAttemptFrame,
             TemplatePreviewFrame, ExamPreviewFrame
         ):
-            # Truyền self (app) vào Frame để các Frame truy cập store
             frame = F(self.container, self)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -61,7 +63,6 @@ class App(tk.Tk):
             cur.on_show()
 
     def logout(self):
-        # Dừng timer nếu đang thi
         tf = self.frames.get("ExamTakeFrame")
         if tf and hasattr(tf, "stop_timer"):
             tf.stop_timer()
