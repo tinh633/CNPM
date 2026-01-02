@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import getpass
 import time
 import secrets
 import string
@@ -582,6 +583,10 @@ def ask(prompt: str) -> str:
     return input(prompt).strip()
 
 
+def ask_password(prompt: str) -> str:
+    return input(prompt).strip()
+
+
 def ask_non_empty(prompt: str) -> str:
     while True:
         s = ask(prompt)
@@ -768,10 +773,11 @@ def teacher_menu(store: DataStore, me: User):
         subtitle = f"Logged in as: {me.full_name or me.username} | {me.username} | Role: Teacher"
         print_header("Teacher Panel", subtitle)
         print("1) Update profile")
-        print("2) Template builder (create)")
-        print("3) List my templates")
-        print("4) Publish exam from template")
-        print("5) List my exams")
+        print("2) Change password")
+        print("3) Template builder (create)")
+        print("4) List my templates")
+        print("5) Publish exam from template")
+        print("6) List my exams")
         print("0) Logout")
         c = ask("Choose: ")
 
@@ -780,12 +786,15 @@ def teacher_menu(store: DataStore, me: User):
         if c == "1":
             teacher_update_profile(store, me)
         elif c == "2":
-            teacher_create_template(store, me)
+            change_password_console(store, me)
+            me = store.find_user(me.username) or me
         elif c == "3":
-            teacher_list_templates(store, me)
+            teacher_create_template(store, me)
         elif c == "4":
-            teacher_publish_exam(store, me)
+            teacher_list_templates(store, me)
         elif c == "5":
+            teacher_publish_exam(store, me)
+        elif c == "6":
             teacher_list_exams(store, me)
         else:
             print("Invalid choice.")
@@ -1073,16 +1082,48 @@ def teacher_view_attempt_details(e: Exam, a: Attempt):
     pause()
 
 
+def change_password_console(store: DataStore, me: User):
+    clear_screen()
+    print_header("Change Password")
+
+    current = ask_password("Current password: ")
+    cur = store.find_user(me.username)
+    if (not cur) or ((cur.password or "") != (current or "")):
+        print("❌ Current password is incorrect.")
+        pause()
+        return
+
+    new_pw = ask_password("New password: ")
+    confirm = ask_password("Confirm new password: ")
+
+    if not (new_pw or "").strip():
+        print("❌ New password must not be empty.")
+        pause()
+        return
+    if new_pw != confirm:
+        print("❌ New password does not match.")
+        pause()
+        return
+
+    ok = store.update_password(me.username, new_pw)
+    if not ok:
+        print("❌ Failed to change password.")
+    else:
+        print("✅ Password changed successfully!")
+    pause()
+
+
 # -----------------------------
 # Student
 # -----------------------------
 def student_menu(store: DataStore, me: User):
     while True:
         clear_screen()
-        print_header("Student Panel", "Student enters exam by CODE. Teacher gives the code.")
+        print_header("Student Panel", "Join exams by CODE. Update your profile and view history.")
         print("1) Update profile")
-        print("2) Enter exam by CODE")
-        print("3) My attempts")
+        print("2) Change password")
+        print("3) Enter exam by CODE")
+        print("4) My attempts")
         print("0) Logout")
         c = ask("Choose: ")
         if c == "0":
@@ -1091,8 +1132,11 @@ def student_menu(store: DataStore, me: User):
             student_update_profile(store, me)
             me = store.find_user(me.username) or me
         elif c == "2":
-            student_enter_exam(store, me)
+            change_password_console(store, me)
+            me = store.find_user(me.username) or me
         elif c == "3":
+            student_enter_exam(store, me)
+        elif c == "4":
             student_my_attempts(store, me)
         else:
             print("Invalid choice.")

@@ -22,11 +22,74 @@ import utils
 # -----------------------------
 # UI helpers
 # -----------------------------
+def _is_valid_date_yyyy_mm_dd(s: str) -> bool:
+    s = (s or "").strip()
+    try:
+        time.strptime(s, "%Y-%m-%d")
+        return True
+    except Exception:
+        return False
+
 def info(msg: str):
     messagebox.showinfo("Thông báo", msg)
 
 def err(msg: str):
     messagebox.showerror("Lỗi", msg)
+
+
+
+class PasswordChangeDialog(tk.Toplevel):
+    """Modal dialog to change password: current, new, confirm."""
+    def __init__(self, parent, title="Đổi mật khẩu"):
+        super().__init__(parent)
+        self.title(title)
+        self.resizable(False, False)
+        self.result = None  # (old, new, confirm) or None
+
+        # Center on parent
+        self.transient(parent)
+        self.grab_set()
+
+        frm = tb.Frame(self, padding=15)
+        frm.pack(fill="both", expand=True)
+
+        self.old_var = tk.StringVar()
+        self.new_var = tk.StringVar()
+        self.cf_var = tk.StringVar()
+
+        tb.Label(frm, text="Mật khẩu hiện tại:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
+        tb.Entry(frm, textvariable=self.old_var, show="*", width=28).grid(row=0, column=1, padx=6, pady=6)
+
+        tb.Label(frm, text="Mật khẩu mới:").grid(row=1, column=0, sticky="e", padx=6, pady=6)
+        tb.Entry(frm, textvariable=self.new_var, show="*", width=28).grid(row=1, column=1, padx=6, pady=6)
+
+        tb.Label(frm, text="Nhập lại mật khẩu mới:").grid(row=2, column=0, sticky="e", padx=6, pady=6)
+        tb.Entry(frm, textvariable=self.cf_var, show="*", width=28).grid(row=2, column=1, padx=6, pady=6)
+
+        btns = tb.Frame(frm)
+        btns.grid(row=3, column=0, columnspan=2, pady=(12, 0), sticky="e")
+
+        tb.Button(btns, text="Hủy", bootstyle="secondary", command=self._cancel).pack(side="right", padx=6)
+        tb.Button(btns, text="Xác nhận", bootstyle="success", command=self._ok).pack(side="right")
+
+        self.bind("<Return>", lambda e: self._ok())
+        self.bind("<Escape>", lambda e: self._cancel())
+
+        # Focus first field
+        self.after(50, lambda: self.focus_force())
+
+    def _ok(self):
+        self.result = (self.old_var.get(), self.new_var.get(), self.cf_var.get())
+        self.destroy()
+
+    def _cancel(self):
+        self.result = None
+        self.destroy()
+
+def ask_change_password(parent) -> tuple | None:
+    dlg = PasswordChangeDialog(parent)
+    parent.wait_window(dlg)
+    return dlg.result
 
 class Header(tb.Frame):
     def __init__(self, parent, title, subtitle=""):
@@ -115,7 +178,7 @@ class LoginFrame(tb.Frame):
             return
 
         self.app.current_user = u
-        # info(f"Xin chào {u.username} ({u.role}).")
+        info(f"Đăng nhập thành công!\nXin chào {u.full_name or u.username} ({u.role}).")
         if u.role == "Admin":
             self.app.show_frame("AdminFrame")
         elif u.role == "Teacher":
@@ -311,6 +374,7 @@ class TeacherFrame(tb.Frame):
         self._create_sidebar_btn("📝  Soạn câu hỏi", lambda: self.show_tab("Builder"))
         self._create_sidebar_btn("📂  Quản lý đề thi", lambda: self.show_tab("Manager"))
         self._create_sidebar_btn("📊  Kết quả thi", lambda: self.show_tab("Results"))
+        self._create_sidebar_btn("👤  Hồ sơ (Profile)", lambda: self.show_tab("Profile"))
         
         tb.Frame(self.sidebar, height=50, bootstyle="primary").pack(fill="y", expand=True) # Spacer
         
@@ -330,11 +394,13 @@ class TeacherFrame(tb.Frame):
         self.tab_builder = self._init_tab_builder()
         self.tab_manager = self._init_tab_manager()
         self.tab_results = self._init_tab_results()
+        self.tab_profile = self._init_tab_profile()
 
         self.notebook.add(self.tab_dashboard, text="Dashboard")
         self.notebook.add(self.tab_builder, text="Builder")
         self.notebook.add(self.tab_manager, text="Manager")
         self.notebook.add(self.tab_results, text="Results")
+        self.notebook.add(self.tab_profile, text="Profile")
         
         # Ẩn thanh tab mặc định
         style = ttk.Style()
@@ -353,7 +419,7 @@ class TeacherFrame(tb.Frame):
         return btn
 
     def show_tab(self, name):
-        tabs = {"Dashboard": 0, "Builder": 1, "Manager": 2, "Results": 3}
+        tabs = {"Dashboard": 0, "Builder": 1, "Manager": 2, "Results": 3, "Profile": 4}
         self.notebook.select(tabs[name])
         
         if name == "Manager":
@@ -368,6 +434,10 @@ class TeacherFrame(tb.Frame):
             self.app.logout()
             return
         self.lbl_user.config(text=f"GV. {self.app.current_user.full_name}\n({self.app.current_user.username})")
+        if hasattr(self, "t_full_name"):
+            self.t_full_name.set(self.app.current_user.full_name)
+        if hasattr(self, "t_dob"):
+            self.t_dob.set(self.app.current_user.dob)
         self.show_tab("Dashboard")
         self.clear_builder()
 
@@ -408,7 +478,7 @@ class TeacherFrame(tb.Frame):
         create_card(grid, "Quản lý đề thi", "📂", "#198754", lambda: self.show_tab("Manager"), 0, 1)
         create_card(grid, "Kết quả & Điểm", "📊", "#ffc107", lambda: self.show_tab("Results"), 0, 2)
         
-        create_card(grid, "Hồ sơ cá nhân", "👤", "#0dcaf0", lambda: info("Tính năng đang phát triển"), 1, 0)
+        create_card(grid, "Hồ sơ cá nhân", "👤", "#0dcaf0", lambda: self.show_tab("Profile"), 1, 0)
         create_card(grid, "Thống kê lớp", "📈", "#6610f2", lambda: info("Tính năng đang phát triển"), 1, 1)
         create_card(grid, "Trợ giúp", "💡", "#d63384", lambda: info("Liên hệ Admin để được hỗ trợ"), 1, 2)
 
@@ -595,6 +665,75 @@ class TeacherFrame(tb.Frame):
         tb.Label(frame, text="* Nhấp đúp vào dòng để xem chi tiết bài làm", font=("Segoe UI", 9, "italic"), bootstyle="secondary").pack(anchor="w")
         
         return frame
+
+
+    # -------------------------------------------------------------------------
+    # TAB 5: PROFILE
+    # -------------------------------------------------------------------------
+    def _init_tab_profile(self):
+        frame = tb.Frame(self.notebook, padding=20)
+
+        tb.Label(frame, text="Hồ sơ cá nhân", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(anchor="w", pady=(0, 10))
+        tb.Label(frame, text="Cập nhật thông tin và đổi mật khẩu của bạn.", bootstyle="secondary").pack(anchor="w", pady=(0, 20))
+
+        form = tb.Labelframe(frame, text="Thông tin giáo viên", padding=15, bootstyle="info")
+        form.pack(fill="x", pady=(0, 15))
+
+        self.t_full_name = tk.StringVar()
+        self.t_dob = tk.StringVar()
+
+        tb.Label(form, text="Họ tên:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
+        tb.Entry(form, textvariable=self.t_full_name, width=40).grid(row=0, column=1, sticky="w", padx=6, pady=6)
+
+        tb.Label(form, text="Ngày sinh (YYYY-MM-DD):").grid(row=1, column=0, sticky="e", padx=6, pady=6)
+        tb.Entry(form, textvariable=self.t_dob, width=40).grid(row=1, column=1, sticky="w", padx=6, pady=6)
+
+        btn_row = tb.Frame(form)
+        btn_row.grid(row=2, column=1, sticky="e", pady=(10, 0))
+        tb.Button(btn_row, text="Lưu hồ sơ", command=self.teacher_update_profile, bootstyle="success").pack(side="left", padx=6)
+        tb.Button(btn_row, text="Đổi mật khẩu", command=self.teacher_change_password, bootstyle="warning").pack(side="left")
+
+        return frame
+
+    def teacher_update_profile(self):
+        u = self.app.current_user
+        if not u:
+            return
+        full_name = (self.t_full_name.get() or "").strip()
+        dob = (self.t_dob.get() or "").strip()
+
+        if dob and (not _is_valid_date_yyyy_mm_dd(dob)):
+            return err("Ngày sinh không hợp lệ. Định dạng đúng: YYYY-MM-DD")
+
+        ok = self.app.store.update_profile(u.username, full_name, dob, student_id="")
+        if not ok:
+            return err("Không thể cập nhật hồ sơ.")
+        uu = self.app.store.find_user(u.username)
+        if uu:
+            self.app.current_user = uu
+            self.lbl_user.config(text=f"GV. {uu.full_name}\n({uu.username})")
+        info("Đã cập nhật hồ sơ giáo viên.")
+
+    def teacher_change_password(self):
+        data = ask_change_password(self)
+        if data is None:
+            return
+        old_pw, new_pw, confirm = data
+        cur = self.app.store.find_user(self.app.current_user.username)
+        if not cur or (cur.password != (old_pw or "")):
+            return err("Mật khẩu hiện tại không đúng.")
+        new_pw = (new_pw or "").strip()
+        if not new_pw:
+            return err("Mật khẩu mới không được để trống.")
+        if new_pw != (confirm or ""):
+            return err("Mật khẩu mới không khớp.")
+        ok = self.app.store.update_password(self.app.current_user.username, new_pw)
+        if not ok:
+            return err("Không thể đổi mật khẩu.")
+        uu = self.app.store.find_user(self.app.current_user.username)
+        if uu:
+            self.app.current_user = uu
+        info("Đổi mật khẩu thành công!")
 
     # =========================================================================
     # LOGIC FUNCTIONS
@@ -911,7 +1050,8 @@ class StudentFrame(tb.Frame):
         tb.Entry(pf, textvariable=self.dob, width=30).grid(row=1, column=1, sticky="w", padx=6, pady=6)
         tb.Label(pf, text="MSSV:").grid(row=2, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(pf, textvariable=self.sid, width=30).grid(row=2, column=1, sticky="w", padx=6, pady=6)
-        tb.Button(pf, text="Cập nhật hồ sơ", command=self.update_profile, bootstyle="primary-outline").grid(row=3, column=1, sticky="e", pady=10)
+        tb.Button(pf, text="Cập nhật hồ sơ", command=self.update_profile, bootstyle="primary-outline").grid(row=3, column=1, sticky="e", pady=(10,5))
+        tb.Button(pf, text="Đổi mật khẩu", command=self.change_password, bootstyle="warning-outline").grid(row=4, column=1, sticky="e", pady=(0,10))
 
         tb.Separator(right).pack(fill="x", padx=10, pady=6)
         tb.Label(right, text="Lịch sử thi:", bootstyle="inverse-light").pack(anchor="w", padx=10)
@@ -932,14 +1072,39 @@ class StudentFrame(tb.Frame):
         self.refresh_attempts()
 
     def update_profile(self):
+        dob = self.dob.get().strip()
+        if dob and (not _is_valid_date_yyyy_mm_dd(dob)):
+            return err("Ngày sinh không hợp lệ. Định dạng đúng: YYYY-MM-DD")
         self.app.store.update_profile(
             self.app.current_user.username,
             self.full_name.get().strip(),
-            self.dob.get().strip(),
+            dob,
             self.sid.get().strip()
         )
         info("Đã cập nhật hồ sơ.")
         self.refresh_attempts()
+
+    def change_password(self):
+        data = ask_change_password(self)
+        if data is None:
+            return
+        old_pw, new_pw, confirm = data
+        # verify current password
+        cur = self.app.store.find_user(self.app.current_user.username)
+        if not cur or (cur.password != (old_pw or "")):
+            return err("Mật khẩu hiện tại không đúng.")
+        new_pw = (new_pw or "").strip()
+        if not new_pw:
+            return err("Mật khẩu mới không được để trống.")
+        if new_pw != (confirm or ""):
+            return err("Mật khẩu mới không khớp.")
+        ok = self.app.store.update_password(self.app.current_user.username, new_pw)
+        if not ok:
+            return err("Không thể đổi mật khẩu.")
+        u = self.app.store.find_user(self.app.current_user.username)
+        if u:
+            self.app.current_user = u
+        info("Đổi mật khẩu thành công!")
 
     def refresh_attempts(self):
         self.attempt_list.delete(0, tk.END)

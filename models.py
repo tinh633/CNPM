@@ -210,6 +210,22 @@ class DataStore:
                 return True
         return False
 
+    def change_password(self, username: str, old_password: str, new_password: str) -> bool:
+        """User self-service change password. Requires correct current password."""
+        old_password = old_password or ""
+        new_password = (new_password or "").strip()
+        if not new_password:
+            return False
+        for u in self.data["users"]:
+            if u.get("username") == username:
+                if (u.get("password") or "") != old_password:
+                    return False
+                u["password"] = new_password
+                self.save()
+                return True
+        return False
+
+
     def update_profile(self, username: str, full_name: str, dob: str, student_id: str) -> bool:
         for u in self.data["users"]:
             if u.get("username") == username:
