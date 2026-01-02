@@ -4,7 +4,7 @@ from tkinter import messagebox, simpledialog, filedialog
 from tkinter import ttk 
 import time
 from typing import Optional, List, Dict, Set
-from utils import audit_log, validate_password_policy
+from utils import audit_log
 
 # Thư viện giao diện đẹp
 import ttkbootstrap as tb
@@ -157,11 +157,11 @@ class LoginFrame(tb.Frame):
         self.user_entry.focus_set()
 
     def do_login(self):
-        selected_role = (self.role_var.get() or "").strip()
-        username = (self.user_var.get() or "").strip()
-        password = self.pass_var.get() or ""
+        role = self.role_var.get().strip()
+        username = self.user_var.get().strip()
+        password = self.pass_var.get()
 
-        if selected_role not in ROLES or not username or not password:
+        if role not in ROLES or not username or not password:
             err("Vui lòng nhập đầy đủ thông tin.")
             return
 
@@ -173,32 +173,41 @@ class LoginFrame(tb.Frame):
             err("Sai mật khẩu.")
             return
 
-        # Chuẩn hóa role + bảo vệ admin gốc
-        u.role = ROLE_CANON.get(str(u.role).strip().lower(), str(u.role).strip())
-        if u.username.lower() == "admin":
-            u.role = "Admin"
-
-        # Nếu chọn sai vai trò thì chỉ cảnh báo, không chặn
-        if selected_role != u.role:
-            messagebox.showwarning(
-                "Sai vai trò",
-                f"Bạn đang chọn: {selected_role}\nTài khoản này là: {u.role}\nHệ thống sẽ vào đúng giao diện theo vai trò."
-            )
-            try:
-                self.role_var.set(u.role)
-            except Exception:
-                pass
+        u.role = ROLE_CANON.get(u.role.lower(), u.role)
+        # Nếu chọn sai vai trò thì KHÔNG chặn đăng nhập; chỉ cảnh báo và tự đồng bộ về vai trò thật.
+        if u.role != role:
+            messagebox.showwarning("Sai vai trò", f"Bạn chọn vai trò: {role}.\nTài khoản này là: {u.role}.\nHệ thống sẽ chuyển về đúng vai trò.")
+            self.role_var.set(u.role)
+            role = u.role
 
         self.app.current_user = u
         info(f"Đăng nhập thành công!\nXin chào {u.full_name or u.username} ({u.role}).")
 
-        # Ép đổi mật khẩu nếu cần
-        if getattr(u, "must_change_password", False):
-            if hasattr(self, "_force_change_password"):
-                self._force_change_password()
-            else:
-                err("Tài khoản bắt buộc đổi mật khẩu, nhưng UI thiếu chức năng đổi mật khẩu.")
-            return
+        # Nếu là tài khoản mới / vừa reset => bắt buộc đổi mật khẩu mạnh (>8 ký tự).
+        if getattr(u, 'must_change_password', False):
+            while True:
+                data = ask_change_password(self)
+                if data is None:
+                    err("Bạn bắt buộc phải đổi mật khẩu ở lần đăng nhập đầu tiên.")
+                    continue
+                old_pw, new_pw, confirm = data
+                if (old_pw or "") != (u.password or ""):
+                    err("Mật khẩu hiện tại không đúng.")
+                    continue
+                new_pw = (new_pw or "").strip()
+                if new_pw != (confirm or ""):
+                    err("Mật khẩu mới không khớp.")
+                    continue
+                ok2, msg2 = utils.validate_strong_password(new_pw)
+                if not ok2:
+                    err(msg2)
+                    continue
+                self.app.store.update_password(u.username, new_pw)
+                self.app.store.set_must_change_password(u.username, False)
+                u = self.app.store.find_user(u.username) or u
+                self.app.current_user = u
+                info("Đổi mật khẩu thành công. Vui lòng đăng nhập tiếp tục!")
+                break
 
         if u.role == "Admin":
             self.app.show_frame("AdminFrame")
@@ -206,6 +215,7 @@ class LoginFrame(tb.Frame):
             self.app.show_frame("TeacherFrame")
         else:
             self.app.show_frame("StudentFrame")
+
 
 class AdminFrame(tb.Frame):
     def __init__(self, parent, app):
@@ -238,8 +248,6 @@ class AdminFrame(tb.Frame):
         f.pack(fill="x")
         tb.Label(f, text="Username:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(f, textvariable=self.new_user, width=28).grid(row=0, column=1, padx=6, pady=6, sticky="w")
-        tb.Label(f, text="Password:").grid(row=1, column=0, sticky="e", padx=6, pady=6)
-        tb.Entry(f, textvariable=self.new_pass, width=28).grid(row=1, column=1, padx=6, pady=6, sticky="w")
         tb.Label(f, text="Role:").grid(row=2, column=0, sticky="e", padx=6, pady=6)
         tb.Combobox(f, textvariable=self.new_role, values=ROLES, state="readonly", width=26)\
             .grid(row=2, column=1, padx=6, pady=6, sticky="w")
@@ -294,41 +302,54 @@ class AdminFrame(tb.Frame):
 
     def create_user(self):
         username = self.new_user.get().strip()
-        password = self.new_pass.get()
-        role = self.new_role.get().strip()
-        if not username or not password or role not in ROLES:
-            err("Username, password, and role are needed.")
+        role = (self.new_role.get() or "").strip()
+        # Username must be CCCD (12 digits)
+        if not utils.is_valid_cccd_username(username):
+            err("Username phải đúng 12 chữ số (CCCD).")
             return
-        ok = self.app.store.add_user(User(username=username, password=password, role=role))
+        if role not in ROLES:
+            err("Role không hợp lệ.")
+            return
+
+        # Random temp password 8 ký tự: hoa + thường + số + kí tự đặc biệt
+        temp_pw = utils.generate_temp_password(8)
+
+        ok = self.app.store.add_user(User(username=username, password=temp_pw, role=role, must_change_password=True))
         if not ok:
-            err("Username exists.")
+            err("Username đã tồn tại.")
             return
+
+        # Hiện mật khẩu 1 lần để admin copy
+        self._show_password_once(username, temp_pw)
+
         info("User created.")
         self.new_user.set("")
-        self.new_pass.set("")
         self.new_role.set("Student")
         self.refresh_users()
 
-    def delete_user_action(self):
-        username = self.target_user.get().strip()
-        if not username:
-            err("Please select or enter a username to delete.")
-            return
-        
-        if username == self.app.current_user.username:
-            err("You cannot delete yourself!")
-            return
+    def _show_password_once(self, username: str, password: str):
+        win = tb.Toplevel(self)
+        win.title("Tạo tài khoản thành công")
+        win.geometry("520x220")
+        win.grab_set()
 
-        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete user '{username}'?\nThis action cannot be undone."):
-            return
+        tb.Label(win, text=f"Đã tạo user: {username}", font=("Segoe UI", 12, "bold")).pack(pady=(14, 6))
+        tb.Label(win, text="Mật khẩu tạm thời (chỉ hiển thị 1 lần). Hãy copy ngay:", bootstyle="secondary").pack(pady=(0, 10))
 
-        success = self.app.store.delete_user(username)
-        if success:
-            info(f"User '{username}' has been deleted.")
-            self.target_user.set("")
-            self.refresh_users()
-        else:
-            err("Cannot delete user (User not found or is restricted 'admin').")
+        ent = tb.Entry(win, width=40)
+        ent.insert(0, password)
+        ent.configure(state="readonly")
+        ent.pack(pady=(0, 12))
+
+        def copy_pw():
+            win.clipboard_clear()
+            win.clipboard_append(password)
+            messagebox.showinfo("Copied", "Đã copy mật khẩu!")
+
+        row = tb.Frame(win)
+        row.pack(pady=6)
+        tb.Button(row, text="Copy", command=copy_pw, bootstyle="primary").pack(side="left", padx=8)
+        tb.Button(row, text="Đóng", command=win.destroy, bootstyle="secondary").pack(side="left", padx=8)
 
     def reset_password(self):
         username = self.target_user.get().strip()
@@ -336,6 +357,10 @@ class AdminFrame(tb.Frame):
 
         if not username or not new_password:
             return err("Username and new password are required.")
+
+        okp, msgp = utils.validate_temp_password(new_password)
+        if not okp:
+            return err(msgp)
 
         # --- Functional requirement: reason ---
         reason = simpledialog.askstring(
@@ -346,6 +371,8 @@ class AdminFrame(tb.Frame):
             return err("Reason is required. Password reset canceled.")
 
         ok = self.app.store.update_password(username, new_password)
+        if ok:
+            self.app.store.set_must_change_password(username, True)
         if not ok:
             return err("User not found.")
 
@@ -359,6 +386,49 @@ class AdminFrame(tb.Frame):
 
         info(f"Password for '{username}' updated.\nAction has been logged.")
         self.reset_pass.set("")
+        self.refresh_users()
+
+
+    def delete_user_action(self):
+        """Delete selected/target user (except 'admin')."""
+        username = (self.target_user.get() or "").strip()
+        if not username:
+            # try from listbox selection
+            sel = self.users_box.curselection()
+            if sel:
+                data = self.users_box.get(sel[0])
+                username = data.split("|")[0].strip()
+
+        if not username:
+            messagebox.showerror("Error", "Please select a user to delete.")
+            return
+
+        # prevent deleting yourself
+        if self.app.current_user and username == self.app.current_user.username:
+            messagebox.showerror("Error", "You cannot delete your own account while logged in.")
+            return
+
+        if username == "admin":
+            messagebox.showerror("Error", "Default admin account cannot be deleted.")
+            return
+
+        if not messagebox.askyesno("Confirm", f"Delete user '{username}'?"):
+            return
+
+        ok = self.app.store.delete_user(username)
+        if not ok:
+            messagebox.showerror("Failed", "Delete failed (user may not exist or cannot be deleted).")
+            return
+
+        utils.log_audit(
+            action="DELETE_USER",
+            performed_by=self.app.current_user.username if self.app.current_user else "unknown",
+            target=username,
+            reason="Admin deleted user"
+        )
+
+        messagebox.showinfo("Success", f"User '{username}' deleted.")
+        self.target_user.set("")
         self.refresh_users()
 
 
@@ -764,6 +834,9 @@ class TeacherFrame(tb.Frame):
             return err("Mật khẩu mới không được để trống.")
         if new_pw != (confirm or ""):
             return err("Mật khẩu mới không khớp.")
+        okp, msgp = utils.validate_strong_password(new_pw)
+        if not okp:
+            return err(msgp)
         ok = self.app.store.update_password(self.app.current_user.username, new_pw)
         if not ok:
             return err("Không thể đổi mật khẩu.")
@@ -1135,6 +1208,9 @@ class StudentFrame(tb.Frame):
             return err("Mật khẩu mới không được để trống.")
         if new_pw != (confirm or ""):
             return err("Mật khẩu mới không khớp.")
+        okp, msgp = utils.validate_strong_password(new_pw)
+        if not okp:
+            return err(msgp)
         ok = self.app.store.update_password(self.app.current_user.username, new_pw)
         if not ok:
             return err("Không thể đổi mật khẩu.")

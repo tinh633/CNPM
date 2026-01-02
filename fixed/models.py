@@ -19,10 +19,10 @@ class User:
     username: str
     password: str
     role: str
+    must_change_password: bool = False
     full_name: str = ""
     dob: str = ""         # YYYY-MM-DD
     student_id: str = ""  # for students
-    must_change_password: bool = False  # force change at next login
 
 @dataclass
 class Question:
@@ -127,10 +127,10 @@ class DataStore:
 
         # Migration logic
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             u.setdefault("full_name", "")
             u.setdefault("dob", "")
             u.setdefault("student_id", "")
-            u.setdefault("must_change_password", False)
             role = str(u.get("role", "")).strip()
             role_norm = ROLE_CANON.get(role.lower(), role)
             if role_norm not in ROLES:
@@ -173,10 +173,10 @@ class DataStore:
     def _seed_default(self):
         self.data = {
             "users": [
-                asdict(User(username="admin", password="admin", role="Admin")),
-                asdict(User(username="teacher", password="teacher", role="Teacher",
+                asdict(User(username="admin", password="admin", role="Admin", must_change_password=False)),
+                asdict(User(username="teacher", password="teacher", role="Teacher", must_change_password=False,
                            full_name="Teacher One", dob="1990-01-01")),
-                asdict(User(username="student", password="student", role="Student",
+                asdict(User(username="student", password="student", role="Student", must_change_password=False,
                            full_name="Student One", dob="2005-01-01", student_id="SV001")),
             ],
             "templates": [],
@@ -187,6 +187,7 @@ class DataStore:
     # ---- Users ----
     def find_user(self, username: str) -> Optional[User]:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 return User(**u)
         return None
@@ -206,11 +207,23 @@ class DataStore:
 
     def update_password(self, username: str, new_password: str) -> bool:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 u["password"] = new_password
+                u["must_change_password"] = False
                 self.save()
                 return True
         return False
+
+
+    def set_must_change_password(self, username: str, value: bool) -> bool:
+        for u in self.data["users"]:
+            if u.get("username") == username:
+                u["must_change_password"] = bool(value)
+                self.save()
+                return True
+        return False
+
 
     def change_password(self, username: str, old_password: str, new_password: str) -> bool:
         """User self-service change password. Requires correct current password."""
@@ -219,10 +232,12 @@ class DataStore:
         if not new_password:
             return False
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 if (u.get("password") or "") != old_password:
                     return False
                 u["password"] = new_password
+                u["must_change_password"] = False
                 self.save()
                 return True
         return False
@@ -230,6 +245,7 @@ class DataStore:
 
     def update_profile(self, username: str, full_name: str, dob: str, student_id: str) -> bool:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 u["full_name"] = full_name
                 u["dob"] = dob

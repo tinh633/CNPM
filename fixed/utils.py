@@ -1,5 +1,8 @@
 # utils.py
 import time
+import re
+import secrets
+import string
 from tkinter import messagebox
 from typing import List, Optional, Set, Tuple
 
@@ -10,6 +13,58 @@ try:
     from openpyxl import Workbook
 except ImportError:
     pass
+
+
+# -----------------------------
+# Password + Username policies (GUI requirements)
+# -----------------------------
+_PASSWORD_SPECIALS = "!@#$%^&*()-_=+[]{};:,.?/\\|~`"
+
+def is_valid_cccd_username(username: str) -> bool:
+    """Username must be exactly 12 digits (CCCD)."""
+    u = (username or "").strip()
+    return bool(re.fullmatch(r"\d{12}", u))
+
+def validate_temp_password(pw: str) -> Tuple[bool, str]:
+    """Temp password: exactly 8+ chars is OK for temp; we will generate 8 exactly for admin-created accounts."""
+    if pw is None:
+        return False, "Password is required."
+    if len(pw) < 8:
+        return False, "Password must be at least 8 characters."
+    if not re.search(r"[A-Z]", pw):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", pw):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r"\d", pw):
+        return False, "Password must contain at least one digit."
+    if not re.search(rf"[{re.escape(_PASSWORD_SPECIALS)}]", pw):
+        return False, f"Password must contain at least one special character ({_PASSWORD_SPECIALS})."
+    return True, "OK"
+
+def validate_strong_password(pw: str) -> Tuple[bool, str]:
+    """Strong password for user change: >8 chars and contains upper/lower/digit/special."""
+    if pw is None:
+        return False, "Password is required."
+    if len(pw) <= 8:
+        return False, "Password must be more than 8 characters."
+    return validate_temp_password(pw)
+
+def generate_temp_password(length: int = 8) -> str:
+    """Generate temp password with required categories. Default length = 8."""
+    length = int(length)
+    if length < 8:
+        length = 8
+    # ensure all categories
+    upp = secrets.choice(string.ascii_uppercase)
+    low = secrets.choice(string.ascii_lowercase)
+    dig = secrets.choice(string.digits)
+    spe = secrets.choice(_PASSWORD_SPECIALS)
+    rest = [secrets.choice(string.ascii_letters + string.digits + _PASSWORD_SPECIALS) for _ in range(length - 4)]
+    pw_list = [upp, low, dig, spe] + rest
+    secrets.SystemRandom().shuffle(pw_list)
+    pw = "".join(pw_list)
+    ok, _ = validate_temp_password(pw)
+    return pw if ok else generate_temp_password(length)
 
 # -----------------------------
 # Time helpers
@@ -101,46 +156,3 @@ def audit_log(action: str, performed_by: str, target: str = "", reason: str = ""
             f.write(line)
     except Exception:
         pass
-
-# -----------------------------
-# Password policy helpers
-# -----------------------------
-import secrets
-import string
-
-def validate_password_policy(pw: str) -> tuple[bool, str]:
-    """Policy: >=8 chars, includes uppercase, lowercase, digit, special."""
-    pw = pw or ""
-    if len(pw) < 8:
-        return False, "Password must be at least 8 characters."
-    if not any(c.islower() for c in pw):
-        return False, "Password must include a lowercase letter."
-    if not any(c.isupper() for c in pw):
-        return False, "Password must include an uppercase letter."
-    if not any(c.isdigit() for c in pw):
-        return False, "Password must include a digit."
-    specials = set("!@#$%^&*()-_=+[]{};:'\",.<>/?|`~")
-    if not any(c in specials for c in pw):
-        return False, "Password must include a special character."
-    return True, ""
-
-def generate_strong_password(length: int = 12) -> str:
-    """Generate a strong password that satisfies the policy."""
-    length = max(8, int(length or 12))
-    lowers = string.ascii_lowercase
-    uppers = string.ascii_uppercase
-    digits = string.digits
-    specials = "!@#$%^&*()-_=+[]{};:'\",.<>/?|`~"
-    # ensure at least 1 from each
-    pw = [
-        secrets.choice(lowers),
-        secrets.choice(uppers),
-        secrets.choice(digits),
-        secrets.choice(specials),
-    ]
-    alphabet = lowers + uppers + digits + specials
-    while len(pw) < length:
-        pw.append(secrets.choice(alphabet))
-    secrets.SystemRandom().shuffle(pw)
-    return "".join(pw)
-
