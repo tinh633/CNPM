@@ -1,3 +1,15 @@
+# Quiz Examination System (Console + OOP) - single file
+# Converted from the GUI version into a console app for demo/presentation.
+# Features:
+# - Login with role (Admin/Teacher/Student)
+# - Admin: create user, list users, reset password
+# - Teacher: build templates, publish exams (code + time window), view attempts, export Word/Excel, delete
+# - Student: join exam by code, take exam, store attempt, review if teacher allows
+#
+# Dependencies for export (optional):
+#   pip install python-docx openpyxl
+#
+# Data file: quiz_data.json (auto created with default users)
 
 from __future__ import annotations
 
@@ -5,6 +17,7 @@ import json
 import os
 import getpass
 import time
+import datetime
 import secrets
 import string
 from dataclasses import dataclass, asdict
@@ -79,6 +92,23 @@ def _is_leap(y: int) -> bool:
 
 def pause():
     input("\nPress ENTER to continue...")
+
+
+def audit_log(action: str, performed_by: str, target: str = "", reason: str = ""):
+    """Append a simple audit entry to audit.log (UTF-8)."""
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{ts}] action={action} by={performed_by}"
+    if target:
+        line += f" target={target}"
+    if reason:
+        safe_reason = " ".join((reason or "").split())
+        line += f" reason={safe_reason}"
+    line += "\n"
+    try:
+        with open("audit.log", "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 
 # -----------------------------
@@ -752,11 +782,35 @@ def admin_menu(store: DataStore, me: User):
             pause()
         elif c == "3":
             clear_screen()
-            print_header("Reset Password")
-            username = ask_non_empty("Username: ")
-            new_pw = ask_non_empty("New password: ")
+            print_header("Reset User Password", "Reason is required. This action will be logged.")
+            username = ask_non_empty("Target username: ")
+            u = store.find_user(username)
+            if not u:
+                print("User not found.")
+                pause()
+                continue
+
+            reason = ask("Reason (required): ")
+            if not reason.strip():
+                print("❌ Reason is required. Reset canceled.")
+                pause()
+                continue
+
+            new_pw = ask_password("New password: ")
+            confirm = ask_password("Confirm new password: ")
+            if not (new_pw or "").strip():
+                print("❌ New password must not be empty.")
+                pause()
+                continue
+            if new_pw != confirm:
+                print("❌ New password does not match.")
+                pause()
+                continue
+
             ok = store.update_password(username, new_pw)
-            print("Updated." if ok else "User not found.")
+            if ok:
+                audit_log("RESET_PASSWORD", performed_by=me.username, target=username, reason=reason)
+            print("✅ Password reset successfully! (Audit log saved)" if ok else "Reset failed.")
             pause()
         else:
             print("Invalid choice.")
