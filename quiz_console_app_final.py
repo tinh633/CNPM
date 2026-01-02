@@ -1,15 +1,3 @@
-# Quiz Examination System (Console + OOP) - single file
-# Converted from the GUI version into a console app for demo/presentation.
-# Features:
-# - Login with role (Admin/Teacher/Student)
-# - Admin: create user, list users, reset password
-# - Teacher: build templates, publish exams (code + time window), view attempts, export Word/Excel, delete
-# - Student: join exam by code, take exam, store attempt, review if teacher allows
-#
-# Dependencies for export (optional):
-#   pip install python-docx openpyxl
-#
-# Data file: quiz_data.json (auto created with default users)
 
 from __future__ import annotations
 
@@ -119,6 +107,7 @@ class User:
     username: str
     password: str
     role: str
+    must_change_password: bool = False
     full_name: str = ""
     dob: str = ""         # YYYY-MM-DD
     student_id: str = ""  # for students
@@ -314,6 +303,14 @@ class DataStore:
         for u in self.data["users"]:
             if u.get("username") == username:
                 u["password"] = new_password
+                self.save()
+                return True
+        return False
+
+    def set_must_change_password(self, username: str, value: bool) -> bool:
+        for u in self.data.get("users", []):
+            if (u.get("username") or "").lower() == (username or "").lower():
+                u["must_change_password"] = bool(value)
                 self.save()
                 return True
         return False
@@ -617,6 +614,37 @@ def ask_password(prompt: str) -> str:
     return input(prompt).strip()
 
 
+def generate_strong_password(length: int = 12) -> str:
+    """Generate a strong temporary password (>=8, upper+lower+digit+special)."""
+    if length < 8:
+        length = 8
+    upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    lower = "abcdefghijklmnopqrstuvwxyz"
+    digits = "0123456789"
+    special = "!@#$%^&*()-_=+[]{};:,.?/"
+    pwd = [secrets.choice(upper), secrets.choice(lower), secrets.choice(digits), secrets.choice(special)]
+    all_chars = upper + lower + digits + special
+    while len(pwd) < length:
+        pwd.append(secrets.choice(all_chars))
+    secrets.SystemRandom().shuffle(pwd)
+    return "".join(pwd)
+
+
+def validate_password_policy(pw: str, min_len: int = 8):
+    """Return (ok, message). Policy: >=min_len, upper+lower+digit+special."""
+    pw = (pw or "").strip()
+    if len(pw) < min_len:
+        return False, f"Password must be at least {min_len} characters."
+    if not any(c.islower() for c in pw):
+        return False, "Password must contain at least one lowercase letter."
+    if not any(c.isupper() for c in pw):
+        return False, "Password must contain at least one uppercase letter."
+    if not any(c.isdigit() for c in pw):
+        return False, "Password must contain at least one digit."
+    if not any(not c.isalnum() for c in pw):
+        return False, "Password must contain at least one special character."
+    return True, ""
+
 def ask_non_empty(prompt: str) -> str:
     while True:
         s = ask(prompt)
@@ -740,6 +768,19 @@ def login_flow(store: DataStore) -> Optional[User]:
 
     display_name = (u.full_name or u.username)
     print(f"Login successful! Welcome {display_name} ({u.role}).")
+
+    # Force password change at first login if required
+    if getattr(u, "must_change_password", False):
+        print("")
+        print("⚠️ You must change your password at first login.")
+        change_password_console(store, u)
+        u2 = store.find_user(u.username)
+        if u2 and getattr(u2, "must_change_password", False):
+            print("Password change required. Login canceled.")
+            pause()
+            return None
+        u = u2 or u
+
     pause()
     return u
 
@@ -767,20 +808,31 @@ def admin_menu(store: DataStore, me: User):
             pause()
         elif c == "2":
             clear_screen()
-            print_header("Create User", "Admin only creates username/password/role. User can fill profile later.")
-            username = ask_non_empty("Username: ")
-            password = ask_non_empty("Password: ")
+            print_header("Create User", "Admin enters only username and role. System generates a temporary password.")
+            username = ask_non_empty("New username: ")
             role = ask_non_empty("Role (Admin/Teacher/Student): ")
             role = ROLE_CANON.get(role.lower(), role)
             if role not in ROLES:
                 print("Invalid role.")
                 pause()
                 continue
-            # Profile fields are intentionally left blank.
-            ok = store.add_user(User(username=username, password=password, role=role))
-            print("Created." if ok else "Username exists.")
+            if store.find_user(username):
+                print("Username exists.")
+                pause()
+                continue
+
+            temp_pw = generate_strong_password(12)
+            ok = store.add_user(User(username=username, password=temp_pw, role=role, must_change_password=True))
+            if ok:
+                audit_log("CREATE_ACCOUNT", performed_by=me.username, target=username, reason=f"role={role}")
+                print("✅ Account created successfully!")
+                print(f"Temporary password (show once): {temp_pw}")
+                print("User must change password at first login.")
+            else:
+                print("Failed to create account.")
             pause()
         elif c == "3":
+
             clear_screen()
             print_header("Reset User Password", "Reason is required. This action will be logged.")
             username = ask_non_empty("Target username: ")
@@ -804,6 +856,12 @@ def admin_menu(store: DataStore, me: User):
                 continue
             if new_pw != confirm:
                 print("❌ New password does not match.")
+                pause()
+                continue
+
+            ok_policy, msg = validate_password_policy(new_pw)
+            if not ok_policy:
+                print(f"❌ {msg}")
                 pause()
                 continue
 
@@ -1159,12 +1217,22 @@ def change_password_console(store: DataStore, me: User):
         pause()
         return
 
+    ok_policy, msg = validate_password_policy(new_pw)
+    if not ok_policy:
+        print(f"❌ {msg}")
+        pause()
+        return
+
     ok = store.update_password(me.username, new_pw)
     if not ok:
         print("❌ Failed to change password.")
-    else:
-        print("✅ Password changed successfully!")
-    pause()
+        pause()
+        return
+
+    # Clear the first-login requirement
+    store.set_must_change_password(me.username, False)
+    me.must_change_password = False
+    print("✅ Password changed successfully!")
 
 
 # -----------------------------
