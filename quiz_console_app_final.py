@@ -268,11 +268,7 @@ class DataStore:
     def _seed_default(self):
         self.data = {
             "users": [
-                asdict(User(username="admin", password="admin", role="Admin")),
-                asdict(User(username="teacher", password="teacher", role="Teacher",
-                           full_name="Teacher One", dob="1990-01-01")),
-                asdict(User(username="student", password="student", role="Student",
-                           full_name="Student One", dob="2005-01-01", student_id="SV001")),
+                asdict(User(username="default_admin", password="123@System", role="Admin")),
             ],
             "templates": [],
             "exams": [],
@@ -653,6 +649,10 @@ def ask_non_empty(prompt: str) -> str:
         print("Please enter a value.")
 
 
+def validate_username_12_chars(username: str) -> bool:
+    return len(username) == 12 and username.isdigit()
+
+
 def ask_int(prompt: str, min_v: int, max_v: int) -> int:
     while True:
         s = ask(prompt)
@@ -732,7 +732,7 @@ def print_header(title: str, subtitle: str = ""):
 # -----------------------------
 def login_flow(store: DataStore) -> Optional[User]:
     clear_screen()
-    print_header("Quiz Examination System (Console)", "Default demo: admin/admin, teacher/teacher, student/student")
+    print_header("Quiz Examination System (Console)", "Default System Admin: default_admin / 123@System")
     print("1) Login")
     print("0) Exit")
     c = ask("Choose: ")
@@ -810,6 +810,10 @@ def admin_menu(store: DataStore, me: User):
             clear_screen()
             print_header("Create User", "Admin enters only username and role. System generates a temporary password.")
             username = ask_non_empty("New username: ")
+            if not validate_username_12_chars(username):
+                print("❌ Username must be exactly 12 digits.")
+                pause()
+                continue
             role = ask_non_empty("Role (Admin/Teacher/Student): ")
             role = ROLE_CANON.get(role.lower(), role)
             if role not in ROLES:
