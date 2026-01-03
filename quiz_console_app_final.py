@@ -294,6 +294,19 @@ class DataStore:
         self.data["users"].append(asdict(user))
         self.save()
         return True
+    
+    def delete_user(self, username: str) -> bool:
+        """Delete a user by username (case-insensitive). Returns True if deleted."""
+        uname = (username or "").strip().lower()
+        if not uname:
+            return False
+        before = len(self.data.get("users", []))
+        self.data["users"] = [u for u in self.data.get("users", []) if (u.get("username") or "").lower() != uname]
+        after = len(self.data.get("users", []))
+        if after == before:
+            return False
+        self.save()
+        return True
 
     def update_password(self, username: str, new_password: str) -> bool:
         for u in self.data["users"]:
@@ -795,6 +808,7 @@ def admin_menu(store: DataStore, me: User):
         print("1) List users")
         print("2) Create user")
         print("3) Reset user password")
+        print("4) Delete user")
         print("0) Logout")
         c = ask("Choose: ")
 
@@ -874,9 +888,53 @@ def admin_menu(store: DataStore, me: User):
                 audit_log("RESET_PASSWORD", performed_by=me.username, target=username, reason=reason)
             print("✅ Password reset successfully! (Audit log saved)" if ok else "Reset failed.")
             pause()
-        else:
-            print("Invalid choice.")
+        
+        elif c == "4":
+            clear_screen()
+            print_header("Delete User", "Reason is required. This action will be logged. You cannot delete your own admin account.")
+            username = ask_non_empty("Target username: ")
+
+            # Safety checks
+            if username.lower() == (me.username or "").lower():
+                print("❌ You cannot delete the account you are currently using.")
+                pause()
+                continue
+
+            u = store.find_user(username)
+            if not u:
+                print("User not found.")
+                pause()
+                continue
+
+            # Prevent deleting the last Admin account
+            if u.role == "Admin":
+                admins = [x for x in store.list_users() if x.role == "Admin"]
+                if len(admins) <= 1:
+                    print("❌ Cannot delete the last Admin account.")
+                    pause()
+                    continue
+
+            # ✅ Reason required (like reset password)
+            reason = ask("Reason (required): ")
+            if not reason.strip():
+                print("❌ Reason is required. Delete canceled.")
+                pause()
+                continue
+
+            if not ask_yes_no(f"Are you sure you want to delete '{u.username}' ({u.role})?", default=False):
+                print("Canceled.")
+                pause()
+                continue
+
+            ok = store.delete_user(u.username)
+            if ok:
+                audit_log("DELETE_ACCOUNT", performed_by=me.username, target=u.username, reason=reason)
+                print("✅ Account deleted successfully! (Audit log saved)")
+            else:
+                print("Delete failed.")
             pause()
+
+        
 
 
 # -----------------------------
