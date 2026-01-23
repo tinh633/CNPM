@@ -19,6 +19,7 @@ class User:
     username: str
     password: str
     role: str
+    must_change_password: bool = False
     full_name: str = ""
     dob: str = ""         # YYYY-MM-DD
     student_id: str = ""  # for students
@@ -50,6 +51,7 @@ class Exam:
     start_ts: int
     end_ts: int
     questions: List[Question]
+    enable_monitoring: bool = False # <--- MỚI: Cờ bật/tắt giám sát
 
 @dataclass
 class Attempt:
@@ -91,19 +93,16 @@ class DataStore:
         self.path = path
         self.data: Dict[str, Any] = {"users": [], "templates": [], "exams": [], "attempts": []}
         self.load()
+
     def delete_user(self, username: str) -> bool:
-        """Xóa user khỏi danh sách. Trả về True nếu xóa thành công."""
-        # Không cho phép xóa tài khoản admin gốc để tránh lỗi hệ thống
-        if username == "admin":
-            return False
-            
+        if username == "admin": return False
         before = len(self.data["users"])
         self.data["users"] = [u for u in self.data["users"] if u.get("username") != username]
-        
         if len(self.data["users"]) < before:
             self.save()
             return True
         return False
+
     def load(self):
         if not os.path.exists(self.path):
             self._seed_default()
@@ -126,6 +125,7 @@ class DataStore:
 
         # Migration logic
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             u.setdefault("full_name", "")
             u.setdefault("dob", "")
             u.setdefault("student_id", "")
@@ -149,6 +149,7 @@ class DataStore:
             e.setdefault("duration_seconds", 0)
             e.setdefault("start_ts", 0)
             e.setdefault("end_ts", 0)
+            e.setdefault("enable_monitoring", False) # <--- MỚI: Default False cho đề cũ
             e.setdefault("questions", [])
             for qu in e.get("questions", []):
                 if "correct_indices" not in qu and "correct_index" in qu:
@@ -171,10 +172,10 @@ class DataStore:
     def _seed_default(self):
         self.data = {
             "users": [
-                asdict(User(username="admin", password="admin", role="Admin")),
-                asdict(User(username="teacher", password="teacher", role="Teacher",
+                asdict(User(username="admin", password="admin", role="Admin", must_change_password=False)),
+                asdict(User(username="teacher", password="teacher", role="Teacher", must_change_password=False,
                            full_name="Teacher One", dob="1990-01-01")),
-                asdict(User(username="student", password="student", role="Student",
+                asdict(User(username="student", password="student", role="Student", must_change_password=False,
                            full_name="Student One", dob="2005-01-01", student_id="SV001")),
             ],
             "templates": [],
@@ -185,6 +186,7 @@ class DataStore:
     # ---- Users ----
     def find_user(self, username: str) -> Optional[User]:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 return User(**u)
         return None
@@ -204,14 +206,41 @@ class DataStore:
 
     def update_password(self, username: str, new_password: str) -> bool:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 u["password"] = new_password
+                u["must_change_password"] = False
+                self.save()
+                return True
+        return False
+
+    def set_must_change_password(self, username: str, value: bool) -> bool:
+        for u in self.data["users"]:
+            if u.get("username") == username:
+                u["must_change_password"] = bool(value)
+                self.save()
+                return True
+        return False
+
+    def change_password(self, username: str, old_password: str, new_password: str) -> bool:
+        old_password = old_password or ""
+        new_password = (new_password or "").strip()
+        if not new_password:
+            return False
+        for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
+            if u.get("username") == username:
+                if (u.get("password") or "") != old_password:
+                    return False
+                u["password"] = new_password
+                u["must_change_password"] = False
                 self.save()
                 return True
         return False
 
     def update_profile(self, username: str, full_name: str, dob: str, student_id: str) -> bool:
         for u in self.data["users"]:
+            u.setdefault("must_change_password", False)
             if u.get("username") == username:
                 u["full_name"] = full_name
                 u["dob"] = dob
@@ -341,6 +370,7 @@ class DataStore:
             "attempt_limit": e.attempt_limit,
             "start_ts": e.start_ts,
             "end_ts": e.end_ts,
+            "enable_monitoring": e.enable_monitoring, # <--- MỚI
             "questions": [asdict(q) for q in e.questions],
         }
 
@@ -360,6 +390,7 @@ class DataStore:
             attempt_limit=int(d.get("attempt_limit", 0) or 0),
             start_ts=int(d.get("start_ts", 0) or 0),
             end_ts=int(d.get("end_ts", 0) or 0),
+            enable_monitoring=bool(d.get("enable_monitoring", False)), # <--- MỚI
             questions=qs
         )
 
