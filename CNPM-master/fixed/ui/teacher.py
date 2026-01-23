@@ -7,18 +7,18 @@ from ttkbootstrap.scrolled import ScrolledText
 import time
 from typing import Optional, List, Set
 
-# Import from other modules
+# Import models and utils
 from models import Template, Exam, Question, Attempt, score_question_partial
 import utils
 from .base import Header, info, err, is_valid_date_yyyy_mm_dd
 from .auth import ask_change_password
 
 # =============================================================================
-# SUPPORT CLASSES (PREVIEW / REVIEW)
+# PREVIEW / REVIEW HELPER CLASSES
 # =============================================================================
 
 class ReviewFrameBase(tb.Frame):
-    """Base class for preview screens (avoids code duplication)"""
+    """Base class for preview screens"""
     def __init__(self, parent, app, title="Review"):
         super().__init__(parent)
         self.app = app
@@ -45,9 +45,9 @@ class TemplatePreviewFrame(ReviewFrameBase):
         if t:
             self.text.insert(tk.END, f"Template: {t.title}\nQuestions: {len(t.questions)}\n\n")
             for i, q in enumerate(t.questions):
-                self.text.insert(tk.END, f"Q {i+1}: {q.text}\n")
+                self.text.insert(tk.END, f"Q{i+1}: {q.text}\n")
                 for oi, opt in enumerate(q.options):
-                    mark = " (correct)" if oi in q.correct_indices else ""
+                    mark = " (Correct)" if oi in q.correct_indices else ""
                     self.text.insert(tk.END, f"  {oi+1}. {opt}{mark}\n")
         self.text.text.config(state="disabled")
 
@@ -60,9 +60,9 @@ class ExamPreviewFrame(ReviewFrameBase):
         if e:
             self.text.insert(tk.END, f"Exam: {e.title}\nCode: {e.access_code}\n\n")
             for i, q in enumerate(e.questions):
-                self.text.insert(tk.END, f"Q {i+1}: {q.text}\n")
+                self.text.insert(tk.END, f"Q{i+1}: {q.text}\n")
                 for oi, opt in enumerate(q.options):
-                    mark = " (correct)" if oi in q.correct_indices else ""
+                    mark = " (Correct)" if oi in q.correct_indices else ""
                     self.text.insert(tk.END, f"  {oi+1}. {opt}{mark}\n")
         self.text.text.config(state="disabled")
 
@@ -75,7 +75,7 @@ class TeacherAttemptFrame(ReviewFrameBase):
         self.text.delete("1.0", tk.END)
         
         if not exam:
-            self.text.insert(tk.END, "Original exam not found (might have been deleted).")
+            self.text.insert(tk.END, "Original exam not found (might be deleted).")
         else:
             total_q = len(exam.questions)
             self.text.insert(tk.END, f"Student: {attempt.full_name} ({attempt.student_id})\n", "h1")
@@ -88,8 +88,8 @@ class TeacherAttemptFrame(ReviewFrameBase):
                 correct = set(q.correct_indices)
                 earned, _, _ = score_question_partial(user_sel, correct, 1.0)
                 
-                self.text.insert(tk.END, f"Q {i+1}: {q.text} ", "q_title")
-                self.text.insert(tk.END, f"(Score: {earned:.2f})\n", "points")
+                self.text.insert(tk.END, f"Q{i+1}: {q.text} ", "q_title")
+                self.text.insert(tk.END, f"(Points: {earned:.2f})\n", "points")
                 
                 for oi, opt in enumerate(q.options):
                     mu = "[x]" if oi in user_sel else "[ ]"
@@ -140,7 +140,7 @@ class TeacherFrame(tb.Frame):
         self.pub_pass = tk.StringVar()
         self.pub_allow_review = tk.BooleanVar(value=False)
         self.pub_attempt_limit = tk.IntVar(value=1)
-        self.pub_enable_monitor = tk.BooleanVar(value=False) # <--- NEW: Anti-cheat state
+        self.pub_enable_monitor = tk.BooleanVar(value=False)
 
         # Variables for Profile
         self.t_full_name = tk.StringVar()
@@ -218,7 +218,7 @@ class TeacherFrame(tb.Frame):
             self.app.logout()
             return
         u = self.app.current_user
-        self.lbl_user.config(text=f"Teacher: {u.full_name}\n({u.username})")
+        self.lbl_user.config(text=f"T. {u.full_name}\n({u.username})")
         self.t_full_name.set(u.full_name)
         self.t_dob.set(u.dob)
         self.show_tab("Dashboard")
@@ -256,8 +256,8 @@ class TeacherFrame(tb.Frame):
         create_card(grid, "Question Bank", "📝", "#0d6efd", lambda: self.show_tab("Builder"), 0, 0)
         create_card(grid, "Exam Manager", "📂", "#198754", lambda: self.show_tab("Manager"), 0, 1)
         create_card(grid, "Results & Scores", "📊", "#ffc107", lambda: self.show_tab("Results"), 0, 2)
-        create_card(grid, "My Profile", "👤", "#0dcaf0", lambda: self.show_tab("Profile"), 1, 0)
-        create_card(grid, "Class Stats", "📈", "#6610f2", lambda: info("Feature under development"), 1, 1)
+        create_card(grid, "Profile", "👤", "#0dcaf0", lambda: self.show_tab("Profile"), 1, 0)
+        create_card(grid, "Class Stats", "📈", "#6610f2", lambda: info("Feature in development"), 1, 1)
         create_card(grid, "Help", "💡", "#d63384", lambda: info("Contact Admin for support"), 1, 2)
         return frame
 
@@ -266,13 +266,13 @@ class TeacherFrame(tb.Frame):
         h = tb.Frame(frame)
         h.pack(fill="x", pady=(0, 10))
         tb.Label(h, text="Question Bank Builder", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(side="left")
-        tb.Button(h, text="Reset Form", command=self.clear_builder, bootstyle="secondary-outline").pack(side="right")
+        tb.Button(h, text="Refresh Form", command=self.clear_builder, bootstyle="secondary-outline").pack(side="right")
 
         body = tb.Frame(frame)
         body.pack(fill="both", expand=True)
         
         # Left
-        left = tb.Labelframe(body, text=" Content Input ", padding=15, bootstyle="success")
+        left = tb.Labelframe(body, text=" Input Content ", padding=15, bootstyle="success")
         left.pack(side="left", fill="both", expand=True, padx=(0, 10))
         
         tb.Label(left, text="Template Title:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
@@ -297,13 +297,13 @@ class TeacherFrame(tb.Frame):
         self.btn_add_q.pack(side="left", fill="x", expand=True, padx=(0, 5))
         
         # Right
-        right = tb.Labelframe(body, text=" Draft Questions ", padding=15, bootstyle="info")
+        right = tb.Labelframe(body, text=" Temporary Question List ", padding=15, bootstyle="info")
         right.pack(side="right", fill="both", expand=True)
         
         self.builder_tree = ttk.Treeview(right, columns=("no", "content", "ans"), show="headings", height=10)
         self.builder_tree.heading("no", text="#")
         self.builder_tree.heading("content", text="Content")
-        self.builder_tree.heading("ans", text="Correct Answer")
+        self.builder_tree.heading("ans", text="Correct Ans")
         self.builder_tree.column("no", width=40, anchor="center")
         self.builder_tree.column("content", width=300)
         self.builder_tree.column("ans", width=80, anchor="center")
@@ -325,22 +325,22 @@ class TeacherFrame(tb.Frame):
         paned.pack(fill="both", expand=True)
 
         # 1. Templates
-        f_tpl = tb.Labelframe(paned, text=" 1. Template Bank ", padding=10)
+        f_tpl = tb.Labelframe(paned, text=" 1. Template Bank (Shared) ", padding=10)
         paned.add(f_tpl, weight=1)
         
         self.tree_tpl = ttk.Treeview(f_tpl, columns=("id", "title", "qs"), show="headings")
-        self.tree_tpl.heading("id", text="ID"); self.tree_tpl.heading("title", text="Title"); self.tree_tpl.heading("qs", text="Count")
+        self.tree_tpl.heading("id", text="ID"); self.tree_tpl.heading("title", text="Title"); self.tree_tpl.heading("qs", text="Qty")
         self.tree_tpl.column("id", width=0, stretch=False) 
         self.tree_tpl.pack(fill="both", expand=True, pady=(0, 10))
         
         btns_tpl = tb.Frame(f_tpl)
         btns_tpl.pack(fill="x")
-        tb.Button(btns_tpl, text="Edit", command=self.edit_selected_template, bootstyle="info-outline").pack(side="left", padx=2)
+        tb.Button(btns_tpl, text="Edit / Copy", command=self.edit_selected_template, bootstyle="info-outline").pack(side="left", padx=2)
         tb.Button(btns_tpl, text="Delete", command=self.delete_selected_template, bootstyle="danger-outline").pack(side="left", padx=2)
         tb.Button(btns_tpl, text="Export Word", command=self.export_selected_template_word, bootstyle="secondary-outline").pack(side="left", padx=2)
         
         # 2. Publish Config
-        f_pub = tb.Labelframe(paned, text=" 2. Exam Configuration ", padding=10, bootstyle="warning")
+        f_pub = tb.Labelframe(paned, text=" 2. Exam Config ", padding=10, bootstyle="warning")
         paned.add(f_pub, weight=1)
         
         tb.Label(f_pub, text="Open Time:").pack(anchor="w")
@@ -349,19 +349,18 @@ class TeacherFrame(tb.Frame):
         tb.Entry(f_pub, textvariable=self.pub_end).pack(fill="x", pady=2)
         
         row1 = tb.Frame(f_pub); row1.pack(fill="x", pady=5)
-        tb.Label(row1, text="Duration (m):").pack(side="left")
+        tb.Label(row1, text="Minutes:").pack(side="left")
         tb.Spinbox(row1, from_=1, to=180, textvariable=self.pub_duration, width=5).pack(side="left", padx=5)
         tb.Label(row1, text="Attempts:").pack(side="left", padx=(10,0))
         tb.Spinbox(row1, from_=0, to=10, textvariable=self.pub_attempt_limit, width=5).pack(side="left", padx=5)
         
-        tb.Checkbutton(f_pub, text="Set Password", variable=self.pub_use_pass, command=self._toggle_pub_pass).pack(anchor="w", pady=(10,0))
+        tb.Checkbutton(f_pub, text="Require Password", variable=self.pub_use_pass, command=self._toggle_pub_pass).pack(anchor="w", pady=(10,0))
         self.pub_pass_entry = tb.Entry(f_pub, textvariable=self.pub_pass, state="disabled")
         self.pub_pass_entry.pack(fill="x")
         tb.Checkbutton(f_pub, text="Allow Review", variable=self.pub_allow_review).pack(anchor="w", pady=5)
         
-        # --- NEW: Anti-cheat Checkbox ---
-        tb.Checkbutton(f_pub, text="Enable Anti-cheat Monitoring", variable=self.pub_enable_monitor, bootstyle="danger-round-toggle").pack(anchor="w", pady=5)
-        # --------------------------------
+        # --- Monitoring Checkbox ---
+        tb.Checkbutton(f_pub, text="Enable Anti-cheat", variable=self.pub_enable_monitor, bootstyle="danger-round-toggle").pack(anchor="w", pady=5)
         
         tb.Button(f_pub, text=">>> PUBLISH EXAM >>>", command=self.publish_exam, bootstyle="warning").pack(fill="x", pady=20)
 
@@ -385,11 +384,11 @@ class TeacherFrame(tb.Frame):
 
     def _init_tab_results(self):
         frame = tb.Frame(self.notebook, padding=10)
-        tb.Label(frame, text="Results & Gradebook", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(anchor="w", pady=(0, 10))
+        tb.Label(frame, text="Results & Scores", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(anchor="w", pady=(0, 10))
 
         top = tb.Frame(frame)
         top.pack(fill="x", pady=(0, 10))
-        tb.Label(top, text="Select exam to view scores:").pack(side="left", padx=(0, 10))
+        tb.Label(top, text="Select Exam:").pack(side="left", padx=(0, 10))
         
         self.res_exam_var = tk.StringVar()
         self.res_exam_cb = tb.Combobox(top, textvariable=self.res_exam_var, state="readonly", width=50)
@@ -399,7 +398,7 @@ class TeacherFrame(tb.Frame):
         tb.Button(top, text="Export Excel", command=self.export_selected_exam_results_excel, bootstyle="success").pack(side="right")
 
         self.tree_res = ttk.Treeview(frame, columns=("aid", "std_name", "sid", "score", "time"), show="headings")
-        self.tree_res.heading("aid", text="ID"); self.tree_res.heading("std_name", text="Full Name")
+        self.tree_res.heading("aid", text="ID"); self.tree_res.heading("std_name", text="Student Name")
         self.tree_res.heading("sid", text="Student ID"); self.tree_res.heading("score", text="Score")
         self.tree_res.heading("time", text="Time Taken")
         self.tree_res.column("aid", width=0, stretch=False)
@@ -416,16 +415,16 @@ class TeacherFrame(tb.Frame):
 
     def _init_tab_profile(self):
         frame = tb.Frame(self.notebook, padding=20)
-        tb.Label(frame, text="Personal Profile", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(anchor="w", pady=(0, 10))
-        tb.Label(frame, text="Update your information and password.", bootstyle="secondary").pack(anchor="w", pady=(0, 20))
+        tb.Label(frame, text="Teacher Profile", font=("Segoe UI", 18, "bold"), bootstyle="primary").pack(anchor="w", pady=(0, 10))
+        tb.Label(frame, text="Update your personal information and password.", bootstyle="secondary").pack(anchor="w", pady=(0, 20))
 
-        form = tb.Labelframe(frame, text="Teacher Information", padding=15, bootstyle="info")
+        form = tb.Labelframe(frame, text="Information", padding=15, bootstyle="info")
         form.pack(fill="x", pady=(0, 15))
 
         tb.Label(form, text="Full Name:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(form, textvariable=self.t_full_name, width=40).grid(row=0, column=1, sticky="w", padx=6, pady=6)
 
-        tb.Label(form, text="Date of Birth (YYYY-MM-DD):").grid(row=1, column=0, sticky="e", padx=6, pady=6)
+        tb.Label(form, text="DOB (YYYY-MM-DD):").grid(row=1, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(form, textvariable=self.t_dob, width=40).grid(row=1, column=1, sticky="w", padx=6, pady=6)
 
         btn_row = tb.Frame(form)
@@ -449,7 +448,7 @@ class TeacherFrame(tb.Frame):
         correct_indices = [i for i, b in enumerate(self.correct_vars) if b.get()]
         
         if not text: return err("Missing question content.")
-        if any(not o for o in options): return err("Please enter all 4 options.")
+        if any(not o for o in options): return err("Please provide all 4 options.")
         if len(correct_indices) == 0: return err("Select at least 1 correct answer.")
         
         q = Question(text=text, options=options, correct_indices=correct_indices)
@@ -477,7 +476,7 @@ class TeacherFrame(tb.Frame):
         for i in range(4):
             self.correct_vars[i].set(i in q.correct_indices)
         self.editing_question_index = idx
-        self.btn_add_q.config(text=f"Update Q #{idx+1}", bootstyle="info")
+        self.btn_add_q.config(text=f"Update Q#{idx+1}", bootstyle="info")
 
     def remove_question_from_builder(self):
         sel = self.builder_tree.selection()
@@ -505,7 +504,7 @@ class TeacherFrame(tb.Frame):
     def save_template(self):
         title = self.tpl_title.get().strip()
         if not title: return err("Missing template title.")
-        if len(self._temp_questions) == 0: return err("At least 1 question is required.")
+        if len(self._temp_questions) == 0: return err("Need at least 1 question.")
         
         if self.editing_template_id:
             if not messagebox.askyesno("Confirm", "Overwrite this template?"): return
@@ -535,9 +534,18 @@ class TeacherFrame(tb.Frame):
     def refresh_templates(self):
         for item in self.tree_tpl.get_children():
             self.tree_tpl.delete(item)
-        teacher = self.app.current_user.username
-        for t in self.app.store.list_templates_by_teacher(teacher):
-            self.tree_tpl.insert("", "end", iid=t.template_id, values=(t.template_id, t.title, len(t.questions)))
+        
+        # --- SHARED: SHOW ALL TEMPLATES ---
+        current_user = self.app.current_user.username
+        
+        for t in self.app.store.list_templates():
+            # Mark other teachers' templates
+            if t.created_by != current_user:
+                display_title = f"{t.title} (by {t.created_by})"
+            else:
+                display_title = t.title
+                
+            self.tree_tpl.insert("", "end", iid=t.template_id, values=(t.template_id, display_title, len(t.questions)))
 
     def refresh_exams(self):
         for item in self.tree_exam.get_children():
@@ -545,7 +553,7 @@ class TeacherFrame(tb.Frame):
         teacher = self.app.current_user.username
         now = int(time.time())
         for e in self.app.store.list_exams_by_teacher(teacher):
-            status = "OPEN" if (e.start_ts <= now <= e.end_ts) else ("WAITING" if now < e.start_ts else "CLOSED")
+            status = "OPEN" if (e.start_ts <= now <= e.end_ts) else ("PENDING" if now < e.start_ts else "CLOSED")
             self.tree_exam.insert("", "end", iid=e.exam_id, values=(e.exam_id, e.title, e.access_code, status))
 
     def edit_selected_template(self):
@@ -555,22 +563,42 @@ class TeacherFrame(tb.Frame):
         t = self.app.store.get_template(tid)
         if not t: return
 
-        self.editing_template_id = t.template_id
-        self.tpl_title.set(t.title)
+        # Load content
         self._temp_questions = list(t.questions) 
         self.refresh_builder_list()
-        self.btn_save.config(text=f"Update ({t.template_id})", bootstyle="info")
+
+        # --- COPY/EDIT LOGIC ---
+        if t.created_by != self.app.current_user.username:
+            # COPY MODE
+            self.editing_template_id = None 
+            self.tpl_title.set(f"{t.title} (Copy)")
+            self.btn_save.config(text="SAVE NEW (COPY)", bootstyle="success")
+            info(f"Loaded template from {t.created_by}.\nCOPY MODE: Saving will create a new template for you.")
+        else:
+            # EDIT MODE
+            self.editing_template_id = t.template_id
+            self.tpl_title.set(t.title)
+            self.btn_save.config(text=f"Update ({t.template_id})", bootstyle="info")
+            info(f"Loaded '{t.title}' for editing.")
+
         self.show_tab("Builder")
-        info(f"Loaded '{t.title}'.")
 
     def delete_selected_template(self):
         sel = self.tree_tpl.selection()
         if not sel: return err("Select a template.")
         tid = sel[0]
+        
+        t = self.app.store.get_template(tid)
+        if not t: return
+
+        # --- DELETE PROTECTION ---
+        if t.created_by != self.app.current_user.username:
+            return err(f"You cannot delete this template.\n(Created by: {t.created_by})")
+
         if self.app.store.has_exam_from_template(tid):
-            if not messagebox.askyesno("Warning", "This template is in use. Deleting it will remove exam data. Continue?"): return
+            if not messagebox.askyesno("Warning", "This template is used in an Exam. Deleting will cause data loss. Continue?"): return
         if self.app.store.delete_template(tid):
-            info("Deleted.")
+            info("Deleted successfully.")
             self.refresh_templates()
 
     def export_selected_template_word(self):
@@ -581,7 +609,7 @@ class TeacherFrame(tb.Frame):
         filepath = filedialog.asksaveasfilename(defaultextension=".docx", filetypes=[("Word", "*.docx")])
         if filepath:
             utils.export_template_to_word(tpl, filepath)
-            info("Word file exported.")
+            info("Exported to Word.")
 
     def _toggle_pub_pass(self):
         if self.pub_use_pass.get():
@@ -592,14 +620,14 @@ class TeacherFrame(tb.Frame):
 
     def publish_exam(self):
         sel = self.tree_tpl.selection()
-        if not sel: return err("Please select a Template from the left table.")
+        if not sel: return err("Please select a Template from the list.")
         tid = sel[0]
         tpl = self.app.store.get_template(tid)
         
         start_ts = utils.parse_dt(self.pub_start.get())
         end_ts = utils.parse_dt(self.pub_end.get())
-        if not start_ts or not end_ts: return err("Invalid date format (YYYY-MM-DD HH:MM)")
-        if end_ts <= start_ts: return err("Close time must be after open time.")
+        if not start_ts or not end_ts: return err("Invalid Date (YYYY-MM-DD HH:MM)")
+        if end_ts <= start_ts: return err("Close time must be after Open time.")
         
         dur_min = int(self.pub_duration.get())
         code = self.app.store.new_unique_code(8)
@@ -616,7 +644,7 @@ class TeacherFrame(tb.Frame):
             attempt_limit=int(self.pub_attempt_limit.get()),
             start_ts=int(start_ts),
             end_ts=int(end_ts),
-            enable_monitoring=bool(self.pub_enable_monitor.get()), # <--- NEW: Save monitoring config
+            enable_monitoring=bool(self.pub_enable_monitor.get()), 
             questions=list(tpl.questions)
         )
         self.app.store.add_exam(e)
@@ -627,7 +655,7 @@ class TeacherFrame(tb.Frame):
         sel = self.tree_exam.selection()
         if not sel: return
         eid = sel[0]
-        if messagebox.askyesno("Delete", "Delete this exam?"):
+        if messagebox.askyesno("Delete", "Delete this Exam?"):
             self.app.store.delete_exam(eid)
             self.refresh_exams()
 
@@ -635,9 +663,9 @@ class TeacherFrame(tb.Frame):
         sel = self.tree_exam.selection()
         if not sel: return
         eid = sel[0]
-        if messagebox.askyesno("Reset", "Delete all student attempts for this exam?"):
+        if messagebox.askyesno("Reset", "Clear all student attempts for this exam?"):
             n = self.app.store.delete_attempts_for_exam(eid)
-            info(f"Deleted {n} attempts.")
+            info(f"Cleared {n} attempts.")
 
     # --- LOGIC RESULTS ---
 
@@ -679,7 +707,7 @@ class TeacherFrame(tb.Frame):
 
     def export_selected_exam_results_excel(self):
         val = self.res_exam_cb.get()
-        if not val: return err("No exam selected.")
+        if not val: return err("Select an exam first.")
         eid = val.split("|")[0].strip()
         e = self.app.store.get_exam(eid)
         attempts = self.app.store.list_attempts_for_exam(eid)
@@ -687,7 +715,7 @@ class TeacherFrame(tb.Frame):
         filepath = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel", "*.xlsx")])
         if filepath:
             utils.export_exam_results_to_excel(e, attempts, filepath)
-            info("Excel exported.")
+            info("Exported to Excel.")
 
     # --- LOGIC PROFILE ---
 
@@ -698,15 +726,15 @@ class TeacherFrame(tb.Frame):
         dob = (self.t_dob.get() or "").strip()
 
         if dob and (not is_valid_date_yyyy_mm_dd(dob)):
-            return err("Invalid date format. Correct: YYYY-MM-DD")
+            return err("Invalid Date. Format: YYYY-MM-DD")
 
         ok = self.app.store.update_profile(u.username, full_name, dob, student_id="")
-        if not ok: return err("Cannot update profile.")
+        if not ok: return err("Failed to update profile.")
         
         uu = self.app.store.find_user(u.username)
         if uu:
             self.app.current_user = uu
-            self.lbl_user.config(text=f"Teacher: {uu.full_name}\n({uu.username})")
+            self.lbl_user.config(text=f"T. {uu.full_name}\n({uu.username})")
         info("Teacher profile updated.")
 
     def teacher_change_password(self):
@@ -715,14 +743,14 @@ class TeacherFrame(tb.Frame):
         old_pw, new_pw, confirm = data
         cur = self.app.store.find_user(self.app.current_user.username)
         if not cur or (cur.password != (old_pw or "")):
-            return err("Current password incorrect.")
+            return err("Incorrect current password.")
         new_pw = (new_pw or "").strip()
         if not new_pw: return err("New password cannot be empty.")
-        if new_pw != (confirm or ""): return err("New passwords do not match.")
+        if new_pw != (confirm or ""): return err("Passwords do not match.")
         okp, msgp = utils.validate_strong_password(new_pw)
         if not okp: return err(msgp)
         ok = self.app.store.update_password(self.app.current_user.username, new_pw)
-        if not ok: return err("Cannot change password.")
+        if not ok: return err("Failed to change password.")
         uu = self.app.store.find_user(self.app.current_user.username)
         if uu: self.app.current_user = uu
         info("Password changed successfully!")
