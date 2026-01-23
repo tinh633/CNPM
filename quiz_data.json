@@ -395,6 +395,71 @@
           ]
         }
       ]
+    },
+    {
+      "exam_id": "EX1767528922107",
+      "template_id": "TP1766942716762",
+      "title": "math",
+      "created_by": "t1",
+      "access_code": "TPZI7FUM",
+      "password": "",
+      "duration_seconds": 1800,
+      "allow_review": false,
+      "attempt_limit": 10,
+      "start_ts": 1767481200,
+      "end_ts": 1767542400,
+      "questions": [
+        {
+          "text": "1312",
+          "options": [
+            "12313",
+            "1231",
+            "1231",
+            "131"
+          ],
+          "correct_indices": [
+            0,
+            3
+          ]
+        },
+        {
+          "text": "2",
+          "options": [
+            "14",
+            "41",
+            "5",
+            "4"
+          ],
+          "correct_indices": [
+            3
+          ]
+        },
+        {
+          "text": "423234",
+          "options": [
+            "12",
+            "78",
+            "06",
+            "45"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "325",
+          "options": [
+            "242",
+            "567",
+            "3213",
+            "214"
+          ],
+          "correct_indices": [
+            1
+          ]
+        }
+      ]
     }
   ],
   "attempts": [
@@ -485,6 +550,26 @@
         [
           0
         ],
+        [],
+        []
+      ]
+    },
+    {
+      "attempt_id": "AT1767540969976154",
+      "exam_id": "EX1767528922107",
+      "code": "TPZI7FUM",
+      "title": "math",
+      "username": "t2",
+      "full_name": "ho van tinh",
+      "student_id": "060206005403",
+      "score": 0.0,
+      "total": 4,
+      "started_at": 1767539680.3310213,
+      "submitted_at": 1767540969.9775207,
+      "time_taken_seconds": 1289,
+      "answers": [
+        [],
+        [],
         [],
         []
       ]
