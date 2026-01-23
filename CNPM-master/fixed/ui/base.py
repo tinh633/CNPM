@@ -5,10 +5,10 @@ import ttkbootstrap as tb
 import time
 
 def info(msg: str):
-    messagebox.showinfo("Thông báo", msg)
+    messagebox.showinfo("Information", msg)
 
 def err(msg: str):
-    messagebox.showerror("Lỗi", msg)
+    messagebox.showerror("Error", msg)
 
 def is_valid_date_yyyy_mm_dd(s: str) -> bool:
     s = (s or "").strip()

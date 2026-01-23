@@ -14,7 +14,7 @@ from .base import Header, info, err, is_valid_date_yyyy_mm_dd
 from .auth import ask_change_password
 
 # =============================================================================
-# 1. MÀN HÌNH CHÍNH CỦA HỌC SINH (DASHBOARD)
+# 1. STUDENT DASHBOARD
 # =============================================================================
 
 class StudentFrame(tb.Frame):
@@ -27,51 +27,51 @@ class StudentFrame(tb.Frame):
         self._build_ui()
         
     def _build_ui(self):
-        Header(self, "Cổng Thông Tin Học Sinh", "Nhập mã đề thi để làm bài.").pack(fill="x")
+        Header(self, "Student Portal", "Enter exam code to start.").pack(fill="x")
         
         top = tb.Frame(self)
         top.pack(fill="x", pady=5)
-        tb.Button(top, text="Tải lại", command=self.app.reload_data, bootstyle="info-outline").pack(side="right", padx=6)
-        tb.Button(top, text="Đăng xuất", command=self.app.logout, bootstyle="secondary").pack(side="right")
+        tb.Button(top, text="Reload", command=self.app.reload_data, bootstyle="info-outline").pack(side="right", padx=6)
+        tb.Button(top, text="Logout", command=self.app.logout, bootstyle="secondary").pack(side="right")
         
         main = tb.Frame(self)
         main.pack(fill="both", expand=True, pady=10)
         
-        # Cột trái: Vào thi
-        left = tb.Labelframe(main, text=" Vào thi ", padding=15, bootstyle="success")
+        # Left: Take Exam
+        left = tb.Labelframe(main, text=" Take Exam ", padding=15, bootstyle="success")
         left.pack(side="left", fill="both", expand=True, padx=(0, 10))
         
-        # Cột phải: Hồ sơ & Lịch sử
-        right = tb.Labelframe(main, text=" Hồ sơ & Lịch sử ", padding=15, bootstyle="info")
+        # Right: Profile & History
+        right = tb.Labelframe(main, text=" Profile & History ", padding=15, bootstyle="info")
         right.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
-        # Form nhập mã đề
+        # Input Code Form
         lf = tb.Frame(left); lf.pack(fill="x", pady=20)
-        tb.Label(lf, text="MÃ ĐỀ THI (CODE):", font=("Segoe UI", 12, "bold")).pack(anchor="w")
+        tb.Label(lf, text="EXAM CODE:", font=("Segoe UI", 12, "bold")).pack(anchor="w")
         self.code_var = tk.StringVar()
         tb.Entry(lf, textvariable=self.code_var, width=25, font=("Consolas", 14)).pack(fill="x", pady=10)
-        tb.Button(lf, text="TÌM ĐỀ THI", command=self.open_by_code, bootstyle="success", width=100).pack(pady=10)
+        tb.Button(lf, text="FIND EXAM", command=self.open_by_code, bootstyle="success", width=100).pack(pady=10)
 
-        # Form thông tin cá nhân
+        # Profile Form
         pf = tb.Frame(right); pf.pack(fill="x")
-        tb.Label(pf, text="Họ tên:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
+        tb.Label(pf, text="Full Name:").grid(row=0, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(pf, textvariable=self.full_name, width=30).grid(row=0, column=1, sticky="w", padx=6, pady=6)
         
-        tb.Label(pf, text="Ngày sinh:").grid(row=1, column=0, sticky="e", padx=6, pady=6)
+        tb.Label(pf, text="DOB:").grid(row=1, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(pf, textvariable=self.dob, width=30).grid(row=1, column=1, sticky="w", padx=6, pady=6)
         
-        tb.Label(pf, text="MSSV:").grid(row=2, column=0, sticky="e", padx=6, pady=6)
+        tb.Label(pf, text="Student ID:").grid(row=2, column=0, sticky="e", padx=6, pady=6)
         tb.Entry(pf, textvariable=self.sid, width=30).grid(row=2, column=1, sticky="w", padx=6, pady=6)
         
-        tb.Button(pf, text="Cập nhật hồ sơ", command=self.update_profile, bootstyle="primary-outline").grid(row=3, column=1, sticky="e", pady=(10,5))
-        tb.Button(pf, text="Đổi mật khẩu", command=self.change_password, bootstyle="warning-outline").grid(row=4, column=1, sticky="e", pady=(0,10))
+        tb.Button(pf, text="Update Profile", command=self.update_profile, bootstyle="primary-outline").grid(row=3, column=1, sticky="e", pady=(10,5))
+        tb.Button(pf, text="Change Password", command=self.change_password, bootstyle="warning-outline").grid(row=4, column=1, sticky="e", pady=(0,10))
 
-        # Danh sách lịch sử thi
+        # History List
         tb.Separator(right).pack(fill="x", padx=10, pady=6)
-        tb.Label(right, text="Lịch sử thi:", bootstyle="inverse-light").pack(anchor="w", padx=10)
+        tb.Label(right, text="Exam History:", bootstyle="inverse-light").pack(anchor="w", padx=10)
         self.attempt_list = tk.Listbox(right, height=10, font=("Segoe UI", 9))
         self.attempt_list.pack(fill="both", expand=True, padx=10, pady=(6, 10))
-        tb.Button(right, text="Xem lại bài đã chọn", command=self.review_selected, bootstyle="info").pack(pady=(0, 10))
+        tb.Button(right, text="Review Selected", command=self.review_selected, bootstyle="info").pack(pady=(0, 10))
 
     def on_show(self):
         if not self.app.current_user or self.app.current_user.role != "Student":
@@ -87,14 +87,14 @@ class StudentFrame(tb.Frame):
     def update_profile(self):
         dob = self.dob.get().strip()
         if dob and (not is_valid_date_yyyy_mm_dd(dob)):
-            return err("Ngày sinh không hợp lệ. Định dạng đúng: YYYY-MM-DD")
+            return err("Invalid date format. Correct format: YYYY-MM-DD")
         self.app.store.update_profile(
             self.app.current_user.username,
             self.full_name.get().strip(),
             dob,
             self.sid.get().strip()
         )
-        info("Đã cập nhật hồ sơ.")
+        info("Profile updated.")
         self.refresh_attempts()
 
     def change_password(self):
@@ -103,23 +103,23 @@ class StudentFrame(tb.Frame):
         old_pw, new_pw, confirm = data
         cur = self.app.store.find_user(self.app.current_user.username)
         if not cur or (cur.password != (old_pw or "")):
-            return err("Mật khẩu hiện tại không đúng.")
+            return err("Current password incorrect.")
         new_pw = (new_pw or "").strip()
-        if not new_pw: return err("Mật khẩu mới không được để trống.")
-        if new_pw != (confirm or ""): return err("Mật khẩu mới không khớp.")
+        if not new_pw: return err("New password cannot be empty.")
+        if new_pw != (confirm or ""): return err("New passwords do not match.")
         okp, msgp = utils.validate_strong_password(new_pw)
         if not okp: return err(msgp)
         ok = self.app.store.update_password(self.app.current_user.username, new_pw)
-        if not ok: return err("Không thể đổi mật khẩu.")
+        if not ok: return err("Cannot change password.")
         u = self.app.store.find_user(self.app.current_user.username)
         if u: self.app.current_user = u
-        info("Đổi mật khẩu thành công!")
+        info("Password changed successfully!")
 
     def refresh_attempts(self):
         self.attempt_list.delete(0, tk.END)
         attempts = self.app.store.list_attempts_for_user(self.app.current_user.username)
         if not attempts:
-            self.attempt_list.insert(tk.END, "Chưa có bài thi nào.")
+            self.attempt_list.insert(tk.END, "No attempts yet.")
             return
         for a in attempts:
             score10 = (a.score / max(1, a.total)) * 10.0
@@ -127,38 +127,38 @@ class StudentFrame(tb.Frame):
 
     def open_by_code(self):
         code = self.code_var.get().strip().upper()
-        if not code: return err("Vui lòng nhập mã đề.")
+        if not code: return err("Please enter exam code.")
         exam = self.app.store.get_exam_by_code(code)
-        if not exam: return err("Không tìm thấy đề thi.")
+        if not exam: return err("Exam not found.")
 
         now = int(time.time())
-        if now < exam.start_ts: return err(f"Đề thi chưa mở.\nBắt đầu: {utils.fmt_dt(exam.start_ts)}")
-        if now > exam.end_ts: return err(f"Đề thi đã đóng.\nKết thúc: {utils.fmt_dt(exam.end_ts)}")
+        if now < exam.start_ts: return err(f"Exam not yet open.\nStarts: {utils.fmt_dt(exam.start_ts)}")
+        if now > exam.end_ts: return err(f"Exam closed.\nEnded: {utils.fmt_dt(exam.end_ts)}")
         
         if exam.attempt_limit > 0:
             used = self.app.store.count_attempts_for_user_exam(self.app.current_user.username, exam.exam_id)
-            if used >= exam.attempt_limit: return err("Bạn đã hết lượt làm bài.")
+            if used >= exam.attempt_limit: return err("No attempts remaining.")
 
         if exam.password:
-            pw = simpledialog.askstring("Mật khẩu", "Đề thi yêu cầu mật khẩu:", show="*")
-            if pw != exam.password: return err("Sai mật khẩu.")
+            pw = simpledialog.askstring("Password", "Exam requires password:", show="*")
+            if pw != exam.password: return err("Incorrect password.")
 
         self.app.frames["ExamTakeFrame"].load_exam(exam)
         self.app.show_frame("ExamTakeFrame")
 
     def review_selected(self):
         sel = self.attempt_list.curselection()
-        if not sel: return err("Chọn một bài thi để xem lại.")
+        if not sel: return err("Select an attempt to review.")
         attempts = self.app.store.list_attempts_for_user(self.app.current_user.username)
         attempt = attempts[sel[0]]
         exam = self.app.store.get_exam(attempt.exam_id)
-        if not exam: return err("Dữ liệu đề thi gốc đã bị xóa.")
-        if not exam.allow_review: return err("Giáo viên không cho phép xem lại bài.")
+        if not exam: return err("Original exam data deleted.")
+        if not exam.allow_review: return err("Teacher does not allow review.")
         self.app.frames["ReviewFrame"].load_review(exam, attempt, back_to="StudentFrame")
         self.app.show_frame("ReviewFrame")
 
 # =============================================================================
-# 2. MÀN HÌNH LÀM BÀI THI (EXAM TAKE)
+# 2. EXAM TAKE SCREEN
 # =============================================================================
 
 class ExamTakeFrame(tb.Frame):
@@ -177,15 +177,15 @@ class ExamTakeFrame(tb.Frame):
         self._timer_job = None
         self._auto_submitted = False
         
-        # Danh sách chỉ mục đã xáo trộn
+        # Shuffled indices list
         self.shuffled_indices: List[int] = []
         
         # --- ANTI-CHEAT VARIABLES ---
         self.violation_count = 0
         self.MAX_VIOLATIONS = 3
         self.is_monitoring = False
-        self._processing_alert = False # Cờ chặn loop cảnh báo
-        self._is_submitting = False    # Cờ chặn bắt lỗi khi nộp bài
+        self._processing_alert = False # Flag to block alert loops
+        self._is_submitting = False    # Flag to block check during submit
         
         # Containers
         self.intro_view = tb.Frame(self)
@@ -200,12 +200,12 @@ class ExamTakeFrame(tb.Frame):
     def _build_intro_ui(self):
         top = tb.Frame(self.intro_view)
         top.pack(fill="x", pady=10, padx=20)
-        tb.Button(top, text="← Quay lại", command=self.back, bootstyle="link").pack(side="left")
+        tb.Button(top, text="← Back", command=self.back, bootstyle="link").pack(side="left")
         
         center = tb.Frame(self.intro_view)
         center.pack(expand=True, fill="both", padx=50, pady=20)
         
-        self.intro_title = tb.Label(center, text="TÊN ĐỀ THI", font=("Segoe UI", 24, "bold"), justify="center")
+        self.intro_title = tb.Label(center, text="EXAM TITLE", font=("Segoe UI", 24, "bold"), justify="center")
         self.intro_title.pack(pady=(20, 30))
         
         card = tb.Frame(center, bootstyle="light", padding=30)
@@ -214,35 +214,35 @@ class ExamTakeFrame(tb.Frame):
         info_grid = tb.Frame(card)
         info_grid.pack(pady=20)
         
-        self.lbl_time = tb.Label(info_grid, text="🕒 Thời gian: -- phút", font=("Segoe UI", 12))
+        self.lbl_time = tb.Label(info_grid, text="🕒 Time: -- min", font=("Segoe UI", 12))
         self.lbl_time.grid(row=0, column=0, padx=40, pady=10, sticky="w")
         
-        self.lbl_qs = tb.Label(info_grid, text="❓ Số câu hỏi: --", font=("Segoe UI", 12))
+        self.lbl_qs = tb.Label(info_grid, text="❓ Questions: --", font=("Segoe UI", 12))
         self.lbl_qs.grid(row=0, column=1, padx=40, pady=10, sticky="w")
         
-        self.lbl_attempts = tb.Label(info_grid, text="👤 Số lượt làm: 0", font=("Segoe UI", 12))
+        self.lbl_attempts = tb.Label(info_grid, text="👤 Attempts: 0", font=("Segoe UI", 12))
         self.lbl_attempts.grid(row=1, column=0, padx=40, pady=10, sticky="w")
         
-        self.lbl_score = tb.Label(info_grid, text="💯 Thang điểm: 10", font=("Segoe UI", 12))
+        self.lbl_score = tb.Label(info_grid, text="💯 Scale: 10", font=("Segoe UI", 12))
         self.lbl_score.grid(row=1, column=1, padx=40, pady=10, sticky="w")
         
-        # Cảnh báo Anti-cheat
-        self.lbl_monitor_warning = tb.Label(card, text="⚠️ Chế độ giám sát: Chuyển tab/thoát toàn màn hình sẽ bị cảnh báo!", 
+        # Anti-cheat warning
+        self.lbl_monitor_warning = tb.Label(card, text="⚠️ Proctoring Mode: Switching tabs/exiting fullscreen will trigger warnings!", 
                  font=("Segoe UI", 10, "italic"), foreground="red")
         self.lbl_monitor_warning.pack(pady=(10, 0))
 
-        tb.Button(card, text="BẮT ĐẦU LÀM BÀI", command=self.start_exam_now, bootstyle="warning", width=30) \
+        tb.Button(card, text="START EXAM", command=self.start_exam_now, bootstyle="warning", width=30) \
           .pack(pady=(20, 0), ipady=10)
         
         hist_frame = tb.Frame(center)
         hist_frame.pack(fill="both", expand=True, pady=40, padx=50)
         
-        tb.Label(hist_frame, text="Lịch sử làm bài của bạn:", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 10))
+        tb.Label(hist_frame, text="Your History:", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 10))
         
         self.hist_tree = tb.Treeview(hist_frame, columns=("time", "score", "dur"), show="headings", height=5)
-        self.hist_tree.heading("time", text="Thời gian nộp")
-        self.hist_tree.heading("score", text="Điểm số")
-        self.hist_tree.heading("dur", text="Thời gian làm")
+        self.hist_tree.heading("time", text="Submitted")
+        self.hist_tree.heading("score", text="Score")
+        self.hist_tree.heading("dur", text="Duration")
         self.hist_tree.column("time", width=200); self.hist_tree.column("score", anchor="center"); self.hist_tree.column("dur", anchor="center")
         self.hist_tree.pack(fill="both", expand=True)
 
@@ -259,31 +259,31 @@ class ExamTakeFrame(tb.Frame):
         container = tb.Frame(self.taking_view)
         container.pack(fill="both", expand=True)
 
-        self.sidebar = tb.Labelframe(container, text=" Bản đồ ", padding=10)
+        self.sidebar = tb.Labelframe(container, text=" Map ", padding=10)
         self.sidebar.pack(side="right", fill="y", padx=10, pady=5)
         self.grid_frame = tb.Frame(self.sidebar)
         self.grid_frame.pack(fill="both", expand=True)
         
-        # [MODIFIED] CHÚ THÍCH DẠNG Ô MÀU (FULL BOX)
+        # LEGEND (FULL BOX)
         legend = tb.Frame(self.sidebar)
         legend.pack(fill="x", pady=20)
         
         def add_legend_item(label_text, boot_style):
             row = tb.Frame(legend)
             row.pack(fill="x", pady=3)
-            # Dùng Button nhỏ để tạo hình ô vuông màu, state=disabled để không bấm được
+            # Small button for color box
             btn = tb.Button(row, text="", width=3, bootstyle=boot_style, state="disabled")
             btn.pack(side="left")
             lbl = tb.Label(row, text=label_text)
             lbl.pack(side="left", padx=10)
 
-        # Cập nhật chú thích theo logic mới
+        # Update legend logic
         legend = tb.Frame(self.sidebar)
         legend.pack(fill="x", pady=20)
-        tb.Label(legend, text="■ Đang làm (Xanh dương)", foreground="#0d6efd").pack(anchor="w")
-        tb.Label(legend, text="■ Đã trả lời (Xanh lá)", foreground="#198754").pack(anchor="w")
-        tb.Label(legend, text="■ Đánh dấu (Vàng)", foreground="#ffc107").pack(anchor="w")
-        tb.Label(legend, text="■ Chưa làm (Xám)", foreground="gray").pack(anchor="w")
+        tb.Label(legend, text="■ Current (Blue)", foreground="#0d6efd").pack(anchor="w")
+        tb.Label(legend, text="■ Answered (Green)", foreground="#198754").pack(anchor="w")
+        tb.Label(legend, text="■ Marked (Yellow)", foreground="#ffc107").pack(anchor="w")
+        tb.Label(legend, text="■ Unanswered (Gray)", foreground="gray").pack(anchor="w")
         
         self.nav_frame = tb.Frame(self.taking_view)
         self.nav_frame.pack(side="bottom", fill="x", pady=10)
@@ -291,10 +291,10 @@ class ExamTakeFrame(tb.Frame):
         self.progress_label = tb.Label(self.nav_frame, text="", font=("Segoe UI", 10, "italic"))
         self.progress_label.pack(side="left", padx=20)
 
-        tb.Button(self.nav_frame, text="NỘP BÀI", command=self.submit, bootstyle="success").pack(side="right", padx=6)
-        tb.Button(self.nav_frame, text="Tiếp >", command=self.next_q, bootstyle="primary-outline").pack(side="right", padx=6)
-        tb.Button(self.nav_frame, text="< Trước", command=self.prev_q, bootstyle="secondary-outline").pack(side="right", padx=6)
-        self.btn_mark = tb.Button(self.nav_frame, text="Đánh dấu", command=self.toggle_mark, bootstyle="warning-outline")
+        tb.Button(self.nav_frame, text="SUBMIT", command=self.submit, bootstyle="success").pack(side="right", padx=6)
+        tb.Button(self.nav_frame, text="Next >", command=self.next_q, bootstyle="primary-outline").pack(side="right", padx=6)
+        tb.Button(self.nav_frame, text="< Prev", command=self.prev_q, bootstyle="secondary-outline").pack(side="right", padx=6)
+        self.btn_mark = tb.Button(self.nav_frame, text="Mark", command=self.toggle_mark, bootstyle="warning-outline")
         self.btn_mark.pack(side="right", padx=20)
 
         self.main_scroll = ScrolledFrame(container, autohide=True, padding=20)
@@ -321,12 +321,12 @@ class ExamTakeFrame(tb.Frame):
     def _build_result_ui(self):
         top = tb.Frame(self.result_view)
         top.pack(fill="x", pady=10, padx=20)
-        tb.Button(top, text="← Về trang chủ", command=self.back, bootstyle="link").pack(side="left")
+        tb.Button(top, text="← Home", command=self.back, bootstyle="link").pack(side="left")
 
         center = tb.Frame(self.result_view)
         center.pack(expand=True, fill="both", padx=50, pady=20)
 
-        tb.Label(center, text="Bài làm của bạn đã được gửi đi", font=("Segoe UI", 18), justify="center").pack(pady=(0, 20))
+        tb.Label(center, text="Your exam has been submitted", font=("Segoe UI", 18), justify="center").pack(pady=(0, 20))
 
         card = tb.Frame(center, bootstyle="light", padding=40)
         card.pack(padx=100, pady=10)
@@ -334,17 +334,17 @@ class ExamTakeFrame(tb.Frame):
         row1 = tb.Frame(card)
         row1.pack(fill="x", pady=(0, 20))
         
-        self.res_time_lbl = tb.Label(row1, text="🕒 Thời gian làm bài: --", font=("Segoe UI", 11))
+        self.res_time_lbl = tb.Label(row1, text="🕒 Duration: --", font=("Segoe UI", 11))
         self.res_time_lbl.pack(side="left", padx=20)
         
-        self.res_correct_lbl = tb.Label(row1, text="❓ Số lượng đúng: --/--", font=("Segoe UI", 11))
+        self.res_correct_lbl = tb.Label(row1, text="❓ Correct: --/--", font=("Segoe UI", 11))
         self.res_correct_lbl.pack(side="right", padx=20)
 
-        tb.Label(card, text="Điểm của bạn:", font=("Segoe UI", 14, "bold")).pack(pady=(10, 5))
+        tb.Label(card, text="Your Score:", font=("Segoe UI", 14, "bold")).pack(pady=(10, 5))
         self.res_score_lbl = tb.Label(card, text="0", font=("Segoe UI", 48, "bold"), foreground="#d9534f") 
         self.res_score_lbl.pack(pady=(0, 20))
 
-        tb.Button(card, text="XEM ĐÁP ÁN CHI TIẾT", command=self.view_detailed_result, bootstyle="warning", width=25) \
+        tb.Button(card, text="VIEW DETAILED ANSWERS", command=self.view_detailed_result, bootstyle="warning", width=25) \
           .pack(ipady=8)
 
     # ------------------ LOGIC ------------------
@@ -359,17 +359,17 @@ class ExamTakeFrame(tb.Frame):
         self.marked_questions = set()
         self._auto_submitted = False
         
-        # Tạo danh sách xáo trộn câu hỏi
+        # Create shuffled list
         self.shuffled_indices = list(range(len(exam.questions)))
         random.shuffle(self.shuffled_indices)
         
         self.intro_title.config(text=exam.title)
-        self.lbl_time.config(text=f"🕒 Thời gian: {exam.duration_seconds // 60} phút")
-        self.lbl_qs.config(text=f"❓ Số câu hỏi: {len(exam.questions)}")
+        self.lbl_time.config(text=f"🕒 Time: {exam.duration_seconds // 60} min")
+        self.lbl_qs.config(text=f"❓ Questions: {len(exam.questions)}")
         
         attempts = self.app.store.list_attempts_for_user(self.app.current_user.username)
         my_attempts = [a for a in attempts if a.exam_id == exam.exam_id]
-        self.lbl_attempts.config(text=f"👤 Số lượt làm: {len(my_attempts)}")
+        self.lbl_attempts.config(text=f"👤 Attempts: {len(my_attempts)}")
 
         if self.exam.enable_monitoring:
             self.lbl_monitor_warning.pack(pady=(10, 0))
@@ -380,7 +380,7 @@ class ExamTakeFrame(tb.Frame):
             self.hist_tree.delete(item)
         for a in my_attempts:
             score10 = (a.score / max(1, a.total)) * 10.0
-            took = f"{a.time_taken_seconds // 60}p {a.time_taken_seconds % 60}s"
+            took = f"{a.time_taken_seconds // 60}m {a.time_taken_seconds % 60}s"
             self.hist_tree.insert("", "end", values=(utils.fmt_dt_full(a.submitted_at), f"{score10:.2f}/10", took))
 
         self.taking_view.pack_forget()
@@ -400,7 +400,7 @@ class ExamTakeFrame(tb.Frame):
         self._is_submitting = False
         
         if self.exam.enable_monitoring:
-            self.violation_label.config(text=f"Vi phạm: 0/{self.MAX_VIOLATIONS}")
+            self.violation_label.config(text=f"Violations: 0/{self.MAX_VIOLATIONS}")
             self.violation_label.pack(side="right", padx=20)
         else:
             self.violation_label.pack_forget()
@@ -417,7 +417,7 @@ class ExamTakeFrame(tb.Frame):
         self.is_monitoring = True
         self.app.attributes("-fullscreen", True) 
         self.app.attributes("-topmost", True)    
-        # Đợi 2 giây cho giao diện ổn định rồi mới bắt lỗi Focus
+        # Wait 2 seconds for UI to stabilize
         self.after(2000, lambda: self.app.bind("<FocusOut>", self.on_focus_out))
 
     def stop_monitoring(self):
@@ -434,12 +434,12 @@ class ExamTakeFrame(tb.Frame):
 
         self._processing_alert = True
         self.violation_count += 1
-        self.violation_label.config(text=f"Vi phạm: {self.violation_count}/{self.MAX_VIOLATIONS}")
+        self.violation_label.config(text=f"Violations: {self.violation_count}/{self.MAX_VIOLATIONS}")
         
-        messagebox.showwarning("CẢNH BÁO GIAN LẬN", 
-                               f"Bạn đã rời khỏi màn hình thi!\n"
-                               f"Vi phạm lần {self.violation_count}.\n"
-                               f"Nếu quá {self.MAX_VIOLATIONS} lần, bài thi sẽ tự động nộp.")
+        messagebox.showwarning("CHEATING WARNING", 
+                               f"You left the exam screen!\n"
+                               f"Violation {self.violation_count}.\n"
+                               f"If exceeding {self.MAX_VIOLATIONS} times, exam will be auto-submitted.")
         
         self.app.focus_force()
         if self.violation_count >= self.MAX_VIOLATIONS:
@@ -464,8 +464,8 @@ class ExamTakeFrame(tb.Frame):
         minutes = attempt.time_taken_seconds // 60
         seconds = attempt.time_taken_seconds % 60
         
-        self.res_time_lbl.config(text=f"🕒 Thời gian làm bài: {minutes} phút {seconds} giây")
-        self.res_correct_lbl.config(text=f"❓ Số lượng đúng: {correct_count} / {attempt.total}")
+        self.res_time_lbl.config(text=f"🕒 Duration: {minutes} min {seconds} sec")
+        self.res_correct_lbl.config(text=f"❓ Correct: {correct_count} / {attempt.total}")
         self.res_score_lbl.config(text=f"{score10:.2f}")
 
         self.taking_view.pack_forget()
@@ -475,7 +475,7 @@ class ExamTakeFrame(tb.Frame):
     def view_detailed_result(self):
         if not self.exam or not self.current_attempt: return
         if not self.exam.allow_review:
-            messagebox.showwarning("Thông báo", "Giáo viên không cho phép xem lại chi tiết bài làm.")
+            messagebox.showwarning("Notice", "Teacher does not allow detailed review.")
             return
         self.app.frames["ReviewFrame"].load_review(self.exam, self.current_attempt, back_to="StudentFrame")
         self.app.show_frame("ReviewFrame")
@@ -491,7 +491,7 @@ class ExamTakeFrame(tb.Frame):
         if not self.exam: return
         cols = 5
         for i in range(len(self.exam.questions)):
-            # Sử dụng grid index bình thường, màu sắc sẽ được update sau
+            # Use normal grid index, color will be updated later
             btn = tb.Button(self.grid_frame, text=str(i + 1), width=3, 
                             command=lambda idx=i: self.jump_to(idx),
                             bootstyle="secondary-outline")
@@ -509,7 +509,7 @@ class ExamTakeFrame(tb.Frame):
 
     def _save_multi_select(self):
         if not self.exam: return
-        # Lưu vào chỉ mục thật
+        # Save to real index
         real_idx = self.shuffled_indices[self.index]
         selected = {i for i in range(4) if self.check_vars[i].get() == 1}
         self.answers[real_idx] = selected
@@ -517,7 +517,7 @@ class ExamTakeFrame(tb.Frame):
 
     def _save_single_select(self):
         if not self.exam: return
-        # Lưu vào chỉ mục thật
+        # Save to real index
         real_idx = self.shuffled_indices[self.index]
         val = self.radio_var.get()
         if val != -1:
@@ -535,7 +535,7 @@ class ExamTakeFrame(tb.Frame):
 
         left = int(self.end_time - time.time())
         mm, ss = max(0, left) // 60, max(0, left) % 60
-        self.timer_label.config(text=f"Thời gian: {mm:02d}:{ss:02d}")
+        self.timer_label.config(text=f"Time: {mm:02d}:{ss:02d}")
         if left < 300: 
             self.timer_label.configure(bootstyle="danger")
         else:
@@ -550,12 +550,12 @@ class ExamTakeFrame(tb.Frame):
     def render(self):
         if not self.exam: return
         
-        # Lấy nội dung câu hỏi thật từ danh sách xáo trộn
+        # Get real question content from shuffled list
         real_idx = self.shuffled_indices[self.index]
         q = self.exam.questions[real_idx]
         
         self.title_label.config(text=f"{self.exam.title}")
-        self.q_label.config(text=f"Câu {self.index+1}: {q.text}")
+        self.q_label.config(text=f"Q {self.index+1}: {q.text}")
         
         self.update_idletasks()
         self.q_label.configure(wraplength=self.main_scroll.winfo_width() - 50)
@@ -565,11 +565,11 @@ class ExamTakeFrame(tb.Frame):
         for widget in self.options_frame.winfo_children():
             widget.destroy()
 
-        # Lấy đáp án đã chọn từ chỉ mục thật
+        # Get answer from real index
         current_ans_set = self.answers[real_idx]
 
         if is_multiselect:
-            self.note_label.config(text="(Chọn tất cả đáp án đúng)", foreground="#d9534f")
+            self.note_label.config(text="(Select all correct answers)", foreground="#d9534f")
             for i in range(4):
                 val = 1 if i in current_ans_set else 0
                 self.check_vars[i].set(val)
@@ -582,7 +582,7 @@ class ExamTakeFrame(tb.Frame):
                 )
                 cb.pack(anchor="w", pady=8, fill="x")
         else:
-            self.note_label.config(text="(Chọn 1 đáp án đúng)", foreground="#0275d8")
+            self.note_label.config(text="(Select 1 correct answer)", foreground="#0275d8")
             if current_ans_set:
                 self.radio_var.set(list(current_ans_set)[0])
             else:
@@ -599,36 +599,36 @@ class ExamTakeFrame(tb.Frame):
                 )
                 rb.pack(anchor="w", pady=8, fill="x")
 
-        self.progress_label.config(text=f"Câu: {self.index+1} / {len(self.exam.questions)}")
+        self.progress_label.config(text=f"Q: {self.index+1} / {len(self.exam.questions)}")
         
         if self.index in self.marked_questions:
-            self.btn_mark.configure(bootstyle="warning", text="Bỏ đánh dấu")
+            self.btn_mark.configure(bootstyle="warning", text="Unmark")
         else:
-            self.btn_mark.configure(bootstyle="warning-outline", text="Đánh dấu")
+            self.btn_mark.configure(bootstyle="warning-outline", text="Mark")
             
         self.render_nav_buttons()
 
     def render_nav_buttons(self):
         for i, btn in enumerate(self.nav_buttons):
-            # i ở đây là index hiển thị, cần lấy real_idx để check trạng thái
+            # i here is display index, need real_idx to check status
             real_idx = self.shuffled_indices[i]
             
             has_answer = len(self.answers[real_idx]) > 0
             is_marked = i in self.marked_questions
             is_current = (i == self.index)
             
-            # Default: Viền xám (Chưa làm, chưa chọn)
+            # Default: Gray outline (Unanswered)
             style = "secondary-outline"
 
-            # Nếu đang làm câu này: Màu xanh dương (Solid) để nổi bật
+            # If current: Blue (Solid)
             if is_current:
                 style = "primary"
 
-            # Yêu cầu 1: Đã chọn đáp án -> Tô màu xanh (Solid)
+            # Rule 1: Answered -> Green (Solid)
             if has_answer:
                 style = "success"
                 
-            # Yêu cầu 2: Đánh dấu -> Tô màu cam (Solid) - Ưu tiên cao nhất
+            # Rule 2: Marked -> Orange (Solid) - Highest priority
             if is_marked:
                 style = "warning"
             
@@ -649,7 +649,7 @@ class ExamTakeFrame(tb.Frame):
         try:
             if not auto_cheat:
                 done = sum(1 for a in self.answers if len(a) > 0)
-                if not messagebox.askyesno("Nộp bài", f"Bạn đã làm: {done}/{len(self.exam.questions)}\nNộp bài ngay?"):
+                if not messagebox.askyesno("Submit Exam", f"You answered: {done}/{len(self.exam.questions)}\nSubmit now?"):
                     self._is_submitting = False
                     return
         except Exception:
@@ -657,15 +657,15 @@ class ExamTakeFrame(tb.Frame):
             return
         
         if auto_cheat:
-            messagebox.showerror("Vi phạm quy chế", "Hệ thống tự động thu bài do bạn vi phạm quá số lần quy định.")
+            messagebox.showerror("Regulation Violation", "System auto-submitted due to violations.")
 
         self._submit_internal(auto=False)
 
     def _submit_internal(self, auto):
         total_score = 0.0
-        # self.answers đang chứa đáp án ở vị trí thật (real index).
-        # self.exam.questions cũng ở vị trí thật.
-        # Nên zip lại là khớp nhau hoàn toàn -> tính điểm đúng.
+        # self.answers contains answers at real index.
+        # self.exam.questions also at real index.
+        # zipping them works perfectly -> calculate score.
         for ans, q in zip(self.answers, self.exam.questions):
             earned, _, _ = score_question_partial(ans, set(q.correct_indices), 1.0)
             total_score += earned
@@ -680,7 +680,7 @@ class ExamTakeFrame(tb.Frame):
         self.app.store.add_attempt(a)
         
         if auto:
-            messagebox.showinfo("Hết giờ", "Hệ thống tự nộp bài.")
+            messagebox.showinfo("Time's up", "System auto-submitted exam.")
         
         self.show_result_screen(a)
 
@@ -690,7 +690,7 @@ class ExamTakeFrame(tb.Frame):
         self.app.show_frame("StudentFrame")
 
 # =============================================================================
-# 3. MÀN HÌNH XEM LẠI BÀI THI (REVIEW)
+# 3. REVIEW SCREEN
 # =============================================================================
 
 class ReviewFrame(tb.Frame):
@@ -698,10 +698,10 @@ class ReviewFrame(tb.Frame):
         super().__init__(parent)
         self.app = app
         self.exam = None; self.attempt = None; self.back_to = None
-        Header(self, "Xem Lại Bài Thi").pack(fill="x")
+        Header(self, "Review Exam").pack(fill="x")
         
         top = tb.Frame(self); top.pack(fill="x", pady=10)
-        tb.Button(top, text="< Quay lại", command=self.go_back, bootstyle="secondary").pack(side="right", padx=20)
+        tb.Button(top, text="< Back", command=self.go_back, bootstyle="secondary").pack(side="right", padx=20)
         
         self.text = ScrolledText(self, wrap="word", height=20, font=("Segoe UI", 11), bootstyle="round")
         self.text.pack(fill="both", expand=True, padx=10, pady=10)
@@ -715,7 +715,7 @@ class ReviewFrame(tb.Frame):
         self.text.delete("1.0", tk.END)
         
         total_q = len(self.exam.questions)
-        self.text.insert(tk.END, f"Điểm số: {self.attempt.score:.2f} / {total_q}\n", "h1")
+        self.text.insert(tk.END, f"Score: {self.attempt.score:.2f} / {total_q}\n", "h1")
         self.text.tag_config("h1", font=("Segoe UI", 16, "bold"), foreground="#2C3E50")
         self.text.insert(tk.END, "-"*60 + "\n\n")
         
@@ -724,12 +724,12 @@ class ReviewFrame(tb.Frame):
             correct = set(q.correct_indices)
             earned, _, _ = score_question_partial(user_sel, correct, 1.0)
             
-            self.text.insert(tk.END, f"Câu {i+1}: {q.text} ", "q_title")
-            self.text.insert(tk.END, f"(Điểm: {earned:.2f})\n", "points")
+            self.text.insert(tk.END, f"Question {i+1}: {q.text} ", "q_title")
+            self.text.insert(tk.END, f"(Points: {earned:.2f})\n", "points")
             
             for oi, opt in enumerate(q.options):
                 mu = "[x]" if oi in user_sel else "[ ]"
-                mc = "  <-- ĐÚNG" if oi in correct else ""
+                mc = "  <-- CORRECT" if oi in correct else ""
                 
                 line = f"   {mu} {oi+1}. {opt}{mc}\n"
                 

@@ -255,6 +255,71 @@
           ]
         }
       ]
+    },
+    {
+      "exam_id": "EX1769152609410",
+      "template_id": "TP1768900098859",
+      "title": "math",
+      "created_by": "teacher",
+      "access_code": "G83CQSN5",
+      "password": "",
+      "duration_seconds": 1800,
+      "allow_review": true,
+      "attempt_limit": 100,
+      "start_ts": 1769130000,
+      "end_ts": 1769184000,
+      "enable_monitoring": true,
+      "questions": [
+        {
+          "text": "1+1",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "correct_indices": [
+            0
+          ]
+        },
+        {
+          "text": "2+2",
+          "options": [
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "correct_indices": [
+            0
+          ]
+        },
+        {
+          "text": "3 + 3",
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "correct_indices": [
+            0
+          ]
+        },
+        {
+          "text": "2+2 x2",
+          "options": [
+            "1231",
+            "435",
+            "123",
+            "54574"
+          ],
+          "correct_indices": [
+            2,
+            3
+          ]
+        }
+      ]
     }
   ],
   "attempts": [
@@ -1655,6 +1720,31 @@
           0,
           1,
           2
+        ]
+      ]
+    },
+    {
+      "attempt_id": "AT176915272216862",
+      "exam_id": "EX1769152609410",
+      "code": "G83CQSN5",
+      "title": "math",
+      "username": "student",
+      "full_name": "Student One",
+      "student_id": "SV001",
+      "score": 0.0,
+      "total": 4,
+      "started_at": 1769152653.127455,
+      "submitted_at": 1769152722.1683838,
+      "time_taken_seconds": 69,
+      "answers": [
+        [],
+        [],
+        [
+          3
+        ],
+        [
+          0,
+          1
         ]
       ]
     }
