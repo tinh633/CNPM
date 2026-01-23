@@ -62,7 +62,7 @@ class LoginFrame(tb.Frame):
         bg_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tb.Label(bg_frame, text="🎓", font=("Segoe UI Emoji", 64)).pack(pady=(0, 10))
-        tb.Label(bg_frame, text="MULTIPLE CHOICE EXAM SYSTEM", font=("Segoe UI", 24, "bold"), bootstyle="primary").pack(pady=(0, 5))
+        tb.Label(bg_frame, text="QUIZ EXAMINATION SYSTEMS", font=("Segoe UI", 24, "bold"), bootstyle="primary").pack(pady=(0, 5))
         tb.Label(bg_frame, text="Login to continue", font=("Segoe UI", 12), bootstyle="secondary").pack(pady=(0, 30))
 
         form = tb.Labelframe(bg_frame, text=" Login Information ", padding=25, bootstyle="primary")
