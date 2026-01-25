@@ -171,7 +171,7 @@ class TeacherFrame(tb.Frame):
         
         tb.Frame(self.sidebar, height=50, bootstyle="primary").pack(fill="y", expand=True) # Spacer
         
-        tb.Button(self.sidebar, text="Logout", command=self.app.logout, bootstyle="light-outline", width=15).pack(pady=20)
+        tb.Button(self.sidebar, text="Logout", command=self.app.logout, bootstyle="danger-outline", width=15).pack(pady=20)
 
         # 2. Main Content Area
         self.content_area = tb.Frame(self, bootstyle="bg")
